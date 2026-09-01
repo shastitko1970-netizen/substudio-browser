@@ -110,7 +110,11 @@ function paint(next) {
   root.style.setProperty("--from", snapshot.space.from);
   root.style.setProperty("--to", snapshot.space.to);
   root.style.setProperty("--folder", snapshot.space.folderColor);
+  root.style.setProperty("--ink", snapshot.space.ink);
+  root.style.setProperty("--muted", snapshot.space.muted);
+  root.classList.toggle("light", !snapshot.space.dark);
   $("space-name").textContent = snapshot.space.name;
+  $("space-color").value = snapshot.space.color || snapshot.space.from;
   document.querySelectorAll("[data-space]").forEach((node) => {
     node.classList.toggle("on", node.getAttribute("data-space") === snapshot.space.id);
   });
@@ -193,6 +197,10 @@ async function onMenu(act) {
 
 $("space-work").onclick = () => send("switchSpace", { spaceId: "work" }).then(paint);
 $("space-home").onclick = () => send("switchSpace", { spaceId: "home" }).then(paint);
+$("space-color").oninput = () => {
+  if (!snapshot?.space) return;
+  send("updateSpaceColor", { spaceId: snapshot.space.id, color: $("space-color").value }).then(paint);
+};
 $("newtab").onclick = () => send("newSpaceTab");
 $("library").onclick = () => send("openLibrary");
 $("add").onclick = async (event) => {

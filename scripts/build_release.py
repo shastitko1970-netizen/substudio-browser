@@ -63,7 +63,11 @@ def pack_overlay(dest: Path) -> Path:
                     rel = file.relative_to(ROOT)
                     if rel.parts[:2] == ("setup", "gui"):
                         continue
-                    if file.name in {".DS_Store", "overlay.zip"} or file.suffix in {".pyc", ".exe", ".syso"}:
+                    if file.name in {".DS_Store", "overlay.zip"}:
+                        continue
+                    if file.suffix in {".pyc", ".syso"}:
+                        continue
+                    if file.suffix == ".exe" and file.name != "SubStudioBrowser.exe":
                         continue
                     archive.write(file, f"SubStudioBrowser-{VERSION}/{rel.as_posix()}")
     return dest

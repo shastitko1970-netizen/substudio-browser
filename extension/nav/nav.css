@@ -24,12 +24,12 @@
 }
 
 :root {
-  --from: #1b1540;
-  --to: #2a1a4a;
-  --ink: #f4efe6;
-  --muted: rgba(244, 239, 230, 0.62);
-  --tile: rgba(8, 6, 20, 0.48);
-  --folder: #4f7cff;
+  --from: #E36B4A;
+  --to: #5B4B8A;
+  --ink: #F4EFE6;
+  --muted: rgba(244, 239, 230, 0.72);
+  --tile: rgba(23, 20, 15, 0.28);
+  --folder: #5B4B8A;
   font-family: Inter, "Segoe UI", system-ui, sans-serif;
 }
 
@@ -149,6 +149,44 @@ body {
 .spaces button.on,
 .spaces button:hover {
   color: var(--ink);
+}
+
+.swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  display: grid;
+  place-items: center;
+}
+
+.spacebar.light .swatch {
+  border-color: rgba(23, 20, 15, 0.18);
+}
+
+.swatch input {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.spacebar.light .pin {
+  box-shadow:
+    inset 0 1px 4px rgba(23, 20, 15, 0.12),
+    inset 0 0 0 1px rgba(23, 20, 15, 0.08);
+}
+
+.spacebar.light .row:hover,
+.spacebar.light .row.active {
+  background: rgba(23, 20, 15, 0.06);
+}
+
+.spacebar.light .newtab {
+  border-top-color: rgba(23, 20, 15, 0.08);
 }
 
 .list {

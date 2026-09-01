@@ -227,8 +227,8 @@ def test_installer_ui() -> None:
             error(f"installer UI missing {needle!r}")
     if "Instrument Serif" not in css or "Inter" not in css:
         error("installer UI must use Instrument Serif + Inter")
-    if "#ff9e6a" not in css.lower() and "#FF9E6A" not in css:
-        error("installer art panel must keep the coral→purple gradient")
+    if "#E36B4A".lower() not in css.lower() or "#5B4B8A".lower() not in css.lower():
+        error("installer art must use SubStudio coral→plum, not Arc navy")
     if f"$ProductVersion = \"{version}\"" not in setup:
         error("GUI host still calls 0.1.x installer — ProductVersion mismatch")
     if "$GuiProgress" not in setup or "Write-SsbProgress" not in setup:
@@ -237,8 +237,8 @@ def test_installer_ui() -> None:
         error("ESR fetch path missing")
     if 'id="btn-theme"' not in html:
         error("installer must have a sun/moon theme toggle")
-    if '[data-theme="dark"]' not in css or "#14110e" not in css or "#f4efe6" not in css:
-        error("installer dark theme must invert cream paper, not a #121212 dashboard")
+    if '[data-theme="dark"]' not in css or "#1A1612".lower() not in css.lower() or "#F4EFE6".lower() not in css.lower():
+        error("installer dark theme must use paper #1A1612 / ink #F4EFE6, not a #121212 dashboard")
     if "userChrome.css" not in setup or "toolkit.legacyUserProfileCustomizations.stylesheets" not in setup:
         error("installer must ship userChrome into the private profile")
     if "substudio-chrome.js" not in setup:
@@ -254,16 +254,16 @@ def test_theme_system() -> None:
     content = (ROOT / "chrome" / "userContent.css").read_text(encoding="utf-8")
     if "Instrument Serif" not in ui or "Inter" not in ui:
         error("companion UI must use Instrument Serif + Inter")
-    if '[data-theme="dark"]' not in ui or "#fffcf9" not in ui or "#14110e" not in ui:
-        error("companion must share cream/ink light+dark tokens")
+    if '[data-theme="dark"]' not in ui or "#F4EFE6".lower() not in ui.lower() or "#17140F".lower() not in ui.lower():
+        error("companion must share SubStudio cream/ink light+dark tokens")
     if "browser.theme" not in theme or "prefers-color-scheme" not in theme:
         error("companion theme must follow browser.theme / prefers-color-scheme")
     if "#sidebar-main" not in chrome or "display: none" not in chrome:
         error("userChrome must hide the stock vertical tab strip")
     if "#TabsToolbar" not in chrome or "visibility: collapse" not in chrome:
         error("userChrome must hide stock horizontal tabs")
-    if "#sidebar-box" not in chrome or "1b1540" not in chrome:
-        error("userChrome must paint the companion Space bar navy/purple")
+    if "#sidebar-box" not in chrome or "#E36B4A".lower() not in chrome.lower():
+        error("userChrome Space bar fallback must be SubStudio coral, not Arc navy")
     if "#substudio-grok-box" not in chrome or "order: 2" not in chrome:
         error("userChrome must dock Grok on the right")
     nav = (ROOT / "extension" / "nav" / "nav.html").read_text(encoding="utf-8")
@@ -277,6 +277,12 @@ def test_theme_system() -> None:
         error("companion pin grid must be 3x3")
     if 'id: "home"' not in spaces or "switchSpace" not in spaces or "pinTab" not in spaces:
         error("spaces.js must implement Home + real pin/space switch")
+    if "updateSpaceColor" not in spaces or 'type="color"' not in nav:
+        error("each Space must have a user color picker")
+    if "#E36B4A".lower() not in spaces.lower() or "#5B4B8A".lower() not in spaces.lower():
+        error("default Work space must be coral/plum warmth")
+    if "#F4EFE6".lower() not in spaces.lower() or "#17140F".lower() not in spaces.lower():
+        error("default Home space must be cream/ink")
     chrome_js = (ROOT / "substudio-chrome.js").read_text(encoding="utf-8")
     if "substudio-companion@substudio.browser" not in chrome_js or "sidecar/sidecar.html" not in chrome_js:
         error("substudio-chrome.js must inject the official Grok sidecar")
@@ -287,6 +293,58 @@ def test_theme_system() -> None:
         error("userContent must be scoped")
     if "url-prefix(http" in content or "url-prefix(\"http" in content:
         error("do not restyle websites in userContent")
+
+
+ARC_PURPLE = ("#1b1540", "#2a1a4a", "#3a1848", "#5a2040")
+SUBSTUDIO_LIGHT = ("#F4EFE6", "#FFFDF8", "#17140F", "#6D6558", "#E36B4A", "#5B4B8A")
+SUBSTUDIO_DARK = ("#1A1612", "#221C16", "#F4EFE6", "#B5AA9A", "#F08A68")
+
+
+def _lower(text: str) -> str:
+    return text.lower()
+
+
+def test_substudio_brand() -> None:
+    skip = {".git", "agent-tools", "dist", "node_modules"}
+    scanned = 0
+    for path in ROOT.rglob("*"):
+        if not path.is_file() or any(part in skip for part in path.parts):
+            continue
+        if path.suffix.lower() not in {".css", ".js", ".html", ".ps1", ".cfg"}:
+            continue
+        text = _lower(path.read_text(encoding="utf-8", errors="ignore"))
+        scanned += 1
+        for purple in ARC_PURPLE:
+            if purple in text:
+                error(f"do not hardcode Arc purple {purple} in {path.relative_to(ROOT)}")
+    if scanned < 10:
+        error("palette scan found too few source files")
+
+    ui = (ROOT / "setup" / "gui" / "ui" / "styles.css").read_text(encoding="utf-8")
+    chrome = (ROOT / "chrome" / "userChrome.css").read_text(encoding="utf-8")
+    companion = (ROOT / "extension" / "ui.css").read_text(encoding="utf-8")
+    for token in SUBSTUDIO_LIGHT:
+        blob = _lower(ui + chrome + companion)
+        if token.lower() not in blob:
+            error(f"SubStudio light token {token} missing from installer/chrome/companion")
+    for token in SUBSTUDIO_DARK:
+        if token.lower() not in _lower(ui + companion + chrome):
+            error(f"SubStudio dark token {token} missing from installer/chrome/companion")
+
+    gen = (ROOT / "scripts" / "generate_icons.py").read_text(encoding="utf-8")
+    if "substudio-browser-icon.png" not in gen:
+        error("icon generator must prefer a brand PNG when the user supplies one")
+    ico = ROOT / "setup" / "substudio-browser.ico"
+    if not ico.exists() or ico.stat().st_size < 200:
+        error("setup/substudio-browser.ico missing — Setup.exe and shortcuts must not use the Firefox logo")
+    setup = (ROOT / "setup" / "Install-SubStudioBrowser.ps1").read_text(encoding="utf-8")
+    if "substudio-browser.ico" not in setup or "identity.icon" not in setup:
+        error("installer must brand shortcuts and the private profile with identity.icon")
+    if "SubStudioBrowser.exe" not in setup:
+        error("installer must ship a branded launcher, not a Firefox-logo shortcut")
+    build = (ROOT / "scripts" / "build_setup.py").read_text(encoding="utf-8")
+    if "substudio-browser.ico" not in build and "winres" not in build and ".syso" not in build:
+        error("Setup.exe build must embed the SubStudio icon")
 
 
 def test_setup_exe() -> None:
@@ -321,6 +379,7 @@ def main() -> int:
     test_no_secrets()
     test_installer_ui()
     test_theme_system()
+    test_substudio_brand()
     test_pack_and_updates()
     test_setup_exe()
     if ERRORS:

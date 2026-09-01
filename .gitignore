@@ -7,6 +7,9 @@ __pycache__/
 node_modules/
 /dist/
 setup/gui/overlay.zip
+setup/gui/rsrc_windows_amd64.syso
+setup/launcher/rsrc_windows_amd64.syso
+setup/SubStudioBrowser.exe
 agent-tools/
 *.user.json
 secrets/

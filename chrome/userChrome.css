@@ -1,40 +1,41 @@
 /* SubStudio Browser — stock Firefox chrome, not a Gecko fork.
-   The companion WebExtension owns the left Space bar (Sidebery-style).
-   Hide native horizontal AND stock vertical tab strips.
-   AutoConfig docks Grok (#substudio-grok-box) on the right. */
+   Companion owns the left Space bar. Hide native tab strips.
+   Palette is cream / coral / plum — not Arc navy. */
 
 :root {
-  --ssb-paper: #f4efe6;
-  --ssb-paper-2: #ebe4d8;
-  --ssb-ink: #14110e;
-  --ssb-muted: #7a756e;
+  --ssb-paper: #F4EFE6;
+  --ssb-window: #FFFDF8;
+  --ssb-ink: #17140F;
+  --ssb-muted: #6D6558;
   --ssb-line: #e6e2d8;
-  --ssb-coral: #e56b4e;
-  --ssb-space: #1b1540;
-  --ssb-space-2: #2a1a4a;
-  --ssb-space-ink: #f4efe6;
-  --ssb-grok: #121212;
-  --toolbar-bgcolor: var(--ssb-paper) !important;
+  --ssb-coral: #E36B4A;
+  --ssb-plum: #5B4B8A;
+  --ssb-space: #E36B4A;
+  --ssb-space-2: #5B4B8A;
+  --ssb-space-ink: #F4EFE6;
+  --ssb-grok: #1A1612;
+  --toolbar-bgcolor: var(--ssb-window) !important;
   --toolbar-color: var(--ssb-ink) !important;
   --toolbar-bgimage: none !important;
   --lwt-accent-color: var(--ssb-space) !important;
   --lwt-text-color: var(--ssb-space-ink) !important;
-  --arrowpanel-background: var(--ssb-paper) !important;
+  --arrowpanel-background: var(--ssb-window) !important;
   --arrowpanel-color: var(--ssb-ink) !important;
   --arrowpanel-border-color: var(--ssb-line) !important;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --ssb-paper: #14110e;
-    --ssb-paper-2: #1c1814;
-    --ssb-ink: #f4efe6;
-    --ssb-muted: #9a9388;
-    --ssb-line: #2e2822;
+    --ssb-paper: #1A1612;
+    --ssb-window: #221C16;
+    --ssb-ink: #F4EFE6;
+    --ssb-muted: #B5AA9A;
+    --ssb-line: #3a342e;
+    --ssb-coral: #F08A68;
+    --ssb-grok: #1A1612;
   }
 }
 
-/* Stock tab strips — companion HTML is the tab UI. */
 #TabsToolbar,
 #TabsToolbar-customization-target,
 #tabbrowser-tabs[orient="horizontal"],
@@ -60,7 +61,7 @@
 #nav-bar,
 #PersonalToolbar,
 #titlebar {
-  background-color: var(--ssb-paper) !important;
+  background-color: var(--ssb-window) !important;
   color: var(--ssb-ink) !important;
 }
 
@@ -68,7 +69,6 @@
   display: flex !important;
 }
 
-/* Left: companion Space bar (sidebar_action → nav/nav.html). */
 #sidebar-box,
 #sidebar-splitter {
   order: 0 !important;
@@ -79,9 +79,9 @@
   min-width: 220px !important;
   max-width: 320px !important;
   color: var(--ssb-space-ink) !important;
-  border-inline-end: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-inline-end: 1px solid rgba(23, 20, 15, 0.08) !important;
   background:
-    radial-gradient(circle at 20% 0%, rgba(90, 70, 160, 0.35), transparent 42%),
+    radial-gradient(circle at 20% 0%, rgba(240, 138, 104, 0.28), transparent 42%),
     linear-gradient(180deg, var(--ssb-space) 0%, var(--ssb-space-2) 100%) !important;
 }
 
@@ -92,11 +92,9 @@
 #sidebar,
 .sidebar-panel {
   background: transparent !important;
-  color: var(--ssb-space-ink) !important;
   border: 0 !important;
 }
 
-/* Center: cream page stage. */
 #tabbrowser-tabbox,
 #appcontent {
   order: 1 !important;
@@ -109,7 +107,6 @@
   background-color: var(--ssb-paper) !important;
 }
 
-/* Right: Grok dock injected by substudio-chrome.js. */
 #substudio-grok-splitter,
 #substudio-grok-box {
   order: 2 !important;
@@ -120,7 +117,7 @@
   min-width: 260px;
   max-width: 480px;
   background: var(--ssb-grok) !important;
-  color: #e8e4dc !important;
+  color: #F4EFE6 !important;
   border-inline-start: 1px solid rgba(255, 255, 255, 0.06) !important;
 }
 
@@ -128,7 +125,7 @@
 #urlbar-background,
 #searchbar {
   border-radius: 999px !important;
-  background-color: var(--ssb-paper-2) !important;
+  background-color: var(--ssb-window) !important;
   color: var(--ssb-ink) !important;
 }
 

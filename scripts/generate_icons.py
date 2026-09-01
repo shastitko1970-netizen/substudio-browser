@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Draw SubStudio marks (not a Firefox logo) as PNG + ICO."""
+"""Draw or import the SubStudio mark (not a Firefox logo) as PNG + ICO."""
 
 from __future__ import annotations
 
@@ -10,6 +10,19 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 ICONS = ROOT / "extension" / "icons"
 SETUP = ROOT / "setup"
+BRAND_CANDIDATES = (
+    ROOT / "substudio-browser-icon.png",
+    ROOT / "brand" / "substudio-browser-icon.png",
+    ROOT / "brand" / "Brand.png",
+    SETUP / "substudio-browser-icon.png",
+    ROOT / "setup" / "gui" / "ui" / "substudio-browser-icon.png",
+)
+
+# SubStudio palette — cream / coral / plum, not Arc navy.
+INK = (23, 20, 15)
+PAPER = (244, 239, 230)
+CORAL = (227, 107, 74)
+PLUM = (91, 75, 138)
 
 
 def chunk(tag: bytes, data: bytes) -> bytes:
@@ -41,9 +54,8 @@ def paint(size: int) -> list[list[tuple[int, int, int, int]]]:
     for y in range(size):
         row = []
         for x in range(size):
-            nx = x / (size - 1)
-            ny = y / (size - 1)
-            # Transparent corners → rounded tile
+            nx = x / max(size - 1, 1)
+            ny = y / max(size - 1, 1)
             inside = True
             if x < margin + radius and y < margin + radius:
                 inside = (x - (margin + radius)) ** 2 + (y - (margin + radius)) ** 2 <= radius**2
@@ -60,25 +72,43 @@ def paint(size: int) -> list[list[tuple[int, int, int, int]]]:
                 row.append((0, 0, 0, 0))
                 continue
 
-            # Navy field
-            r, g, b = 22, 28, 42
-            # Teal window (left)
+            r, g, b = INK
             if 0.22 * size < x < 0.58 * size and 0.24 * size < y < 0.76 * size:
-                r, g, b = 61, 205, 192
-            # Overlapping amber pane (right)
+                r, g, b = PLUM
             if 0.42 * size < x < 0.78 * size and 0.34 * size < y < 0.80 * size:
-                r = lerp(r, 240, 0.72)
-                g = lerp(g, 160, 0.72)
-                b = lerp(b, 80, 0.72)
-            # Inner cut so it reads as two frames, not a blob
+                r = lerp(r, CORAL[0], 0.78)
+                g = lerp(g, CORAL[1], 0.78)
+                b = lerp(b, CORAL[2], 0.78)
             if 0.34 * size < x < 0.46 * size and 0.40 * size < y < 0.62 * size:
-                r, g, b = 22, 28, 42
-            # Soft top highlight
+                r, g, b = INK
             if ny < 0.28:
-                r = lerp(r, 80, 0.12)
-                g = lerp(g, 90, 0.12)
-                b = lerp(b, 110, 0.12)
+                r = lerp(r, PAPER[0], 0.10)
+                g = lerp(g, PAPER[1], 0.10)
+                b = lerp(b, PAPER[2], 0.10)
             row.append((r, g, b, 255))
+        pixels.append(row)
+    return pixels
+
+
+def find_brand_png() -> Path | None:
+    for path in BRAND_CANDIDATES:
+        if path.is_file() and path.stat().st_size > 32:
+            return path
+    return None
+
+
+def scale_brand(path: Path, size: int) -> list[list[tuple[int, int, int, int]]] | None:
+    try:
+        from PIL import Image
+    except ImportError:
+        return None
+    image = Image.open(path).convert("RGBA")
+    image = image.resize((size, size), Image.Resampling.LANCZOS)
+    pixels = []
+    for y in range(size):
+        row = []
+        for x in range(size):
+            row.append(image.getpixel((x, y)))
         pixels.append(row)
     return pixels
 
@@ -100,13 +130,18 @@ def write_ico(path: Path, pngs: list[tuple[int, bytes]]) -> None:
 def main() -> None:
     ICONS.mkdir(parents=True, exist_ok=True)
     SETUP.mkdir(parents=True, exist_ok=True)
+    brand = find_brand_png()
     png_bytes: list[tuple[int, bytes]] = []
     for size in (16, 32, 48, 96, 128, 256):
-        data = write_png(ICONS / f"icon-{size}.png", size, paint(size))
+        pixels = scale_brand(brand, size) if brand else None
+        if pixels is None:
+            pixels = paint(size)
+        data = write_png(ICONS / f"icon-{size}.png", size, pixels)
         if size in (16, 32, 48, 256):
             png_bytes.append((size, data))
     write_ico(SETUP / "substudio-browser.ico", png_bytes)
-    print(f"wrote icons in {ICONS} and {SETUP / 'substudio-browser.ico'}")
+    source = f"brand {brand}" if brand else "generated cream/coral/plum mark"
+    print(f"wrote icons from {source} → {ICONS} and {SETUP / 'substudio-browser.ico'}")
 
 
 if __name__ == "__main__":

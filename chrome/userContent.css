@@ -2,9 +2,10 @@
 
 @-moz-document url("about:home"), url("about:newtab"), url("about:privatebrowsing"), url("about:firefoxview"), url("about:firefoxview-next") {
   :root {
-    --ssb-paper: #f4efe6;
-    --ssb-ink: #14110e;
-    --ssb-muted: #7a756e;
+    --ssb-paper: #F4EFE6;
+    --ssb-window: #FFFDF8;
+    --ssb-ink: #17140F;
+    --ssb-muted: #6D6558;
     --newtab-background-color: var(--ssb-paper) !important;
     --newtab-text-primary-color: var(--ssb-ink) !important;
     --newtab-text-secondary-color: var(--ssb-muted) !important;
@@ -13,9 +14,10 @@
 
   @media (prefers-color-scheme: dark) {
     :root {
-      --ssb-paper: #14110e;
-      --ssb-ink: #f4efe6;
-      --ssb-muted: #9a9388;
+      --ssb-paper: #1A1612;
+      --ssb-window: #221C16;
+      --ssb-ink: #F4EFE6;
+      --ssb-muted: #B5AA9A;
     }
   }
 
@@ -24,6 +26,6 @@
   .discovery-stream {
     background-color: var(--ssb-paper) !important;
     color: var(--ssb-ink) !important;
-    font-family: "Segoe UI", Inter, system-ui, sans-serif !important;
+    font-family: Inter, "Segoe UI", system-ui, sans-serif !important;
   }
 }

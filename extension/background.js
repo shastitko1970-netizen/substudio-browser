@@ -27,6 +27,7 @@ import {
   spaceById,
   switchSpace,
   toggleFolder,
+  updateSpaceColor,
 } from "./lib/spaces.js";
 
 let settings = { ...DEFAULT_SETTINGS };
@@ -279,6 +280,10 @@ const messageHandlers = {
 
   async switchSpace(message) {
     return switchSpace(await loadSpaces(), String(message.spaceId || "work"));
+  },
+
+  async updateSpaceColor(message) {
+    return updateSpaceColor(await loadSpaces(), String(message.spaceId || "work"), String(message.color || ""));
   },
 
   async newSpaceTab() {

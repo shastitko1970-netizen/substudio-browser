@@ -1,21 +1,37 @@
 export const SPACES_KEY = "ssbSpaces";
 
+export const PALETTE = {
+  paper: "#F4EFE6",
+  window: "#FFFDF8",
+  ink: "#17140F",
+  muted: "#6D6558",
+  coral: "#E36B4A",
+  plum: "#5B4B8A",
+  darkPaper: "#1A1612",
+  darkWindow: "#221C16",
+  darkInk: "#F4EFE6",
+  darkMuted: "#B5AA9A",
+  darkCoral: "#F08A68",
+};
+
 export const DEFAULT_SPACES = {
   activeId: "work",
   spaces: [
     {
       id: "work",
       name: "Work",
-      from: "#1b1540",
-      to: "#2a1a4a",
-      folderColor: "#4f7cff",
+      color: PALETTE.coral,
+      from: PALETTE.coral,
+      to: PALETTE.plum,
+      folderColor: PALETTE.plum,
     },
     {
       id: "home",
       name: "Home",
-      from: "#3a1848",
-      to: "#5a2040",
-      folderColor: "#e56b4e",
+      color: PALETTE.paper,
+      from: PALETTE.paper,
+      to: PALETTE.window,
+      folderColor: PALETTE.ink,
     },
   ],
   folders: [
@@ -49,6 +65,18 @@ export function migrateSpaces(data) {
     spaceId: folder.spaceId === "personal" ? "home" : folder.spaceId,
     collapsed: Boolean(folder.collapsed),
   }));
+  for (const space of next.spaces) {
+    if (space.color) continue;
+    const fallback = DEFAULT_SPACES.spaces.find((item) => item.id === space.id);
+    if (fallback) {
+      space.color = fallback.color;
+      space.from = fallback.from;
+      space.to = fallback.to;
+      space.folderColor = fallback.folderColor;
+    } else {
+      applyPickedColor(space, space.from || PALETTE.coral);
+    }
+  }
   return next;
 }
 
@@ -71,6 +99,49 @@ export function spaceById(data, id) {
   return data.spaces.find((item) => item.id === id) || data.spaces[0];
 }
 
+export function parseHex(hex) {
+  const match = /^#?([0-9a-f]{6})$/i.exec(String(hex || "").trim());
+  if (!match) return null;
+  return {
+    r: parseInt(match[1].slice(0, 2), 16),
+    g: parseInt(match[1].slice(2, 4), 16),
+    b: parseInt(match[1].slice(4, 6), 16),
+  };
+}
+
+export function hexColor(r, g, b) {
+  const clamp = (value) => Math.max(0, Math.min(255, Math.round(value)));
+  return `#${[r, g, b].map((value) => clamp(value).toString(16).padStart(2, "0")).join("")}`.toUpperCase();
+}
+
+export function mixHex(left, right, amount) {
+  const a = parseHex(left);
+  const b = parseHex(right);
+  if (!a || !b) return left;
+  return hexColor(a.r + (b.r - a.r) * amount, a.g + (b.g - a.g) * amount, a.b + (b.b - a.b) * amount);
+}
+
+export function isDarkHex(hex) {
+  const rgb = parseHex(hex);
+  if (!rgb) return true;
+  return (0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b) / 255 < 0.55;
+}
+
+export function applyPickedColor(space, color) {
+  const rgb = parseHex(color);
+  if (!space || !rgb) return space;
+  const normalized = hexColor(rgb.r, rgb.g, rgb.b);
+  space.color = normalized;
+  space.from = normalized;
+  space.to = mixHex(normalized, isDarkHex(normalized) ? PALETTE.ink : PALETTE.plum, 0.42);
+  space.folderColor = isDarkHex(normalized) ? PALETTE.darkCoral : PALETTE.plum;
+  return space;
+}
+
+export function spaceInk(space) {
+  return isDarkHex(space?.from) ? PALETTE.darkInk : PALETTE.ink;
+}
+
 export function tileLabel(title, url) {
   try {
     const host = new URL(url).hostname.replace(/^www\./, "");
@@ -84,18 +155,19 @@ export function tileLabel(title, url) {
 
 export async function applySpaceTheme(space) {
   if (!browser.theme?.update || !space) return;
+  const ink = spaceInk(space);
   try {
     await browser.theme.update({
       colors: {
         frame: space.from,
-        tab_background_text: "#f4efe6",
-        toolbar: "#f4efe6",
-        toolbar_text: "#14110e",
-        ntp_background: "#f4efe6",
-        ntp_text: "#14110e",
+        tab_background_text: ink,
+        toolbar: PALETTE.window,
+        toolbar_text: PALETTE.ink,
+        ntp_background: PALETTE.paper,
+        ntp_text: PALETTE.ink,
         sidebar: space.from,
-        sidebar_text: "#f4efe6",
-        bookmark_text: "#14110e",
+        sidebar_text: ink,
+        bookmark_text: PALETTE.ink,
       },
     });
   } catch {
@@ -240,12 +312,26 @@ export async function listSpaceSnapshot(data) {
     }
   }
   return {
-    space: active,
+    space: {
+      ...active,
+      color: active.color || active.from,
+      dark: isDarkHex(active.from),
+      ink: spaceInk(active),
+      muted: isDarkHex(active.from) ? PALETTE.darkMuted : PALETTE.muted,
+    },
     spaces: data.spaces,
     pins,
     folders,
     tabs: rows.filter((item) => !item.pinned),
   };
+}
+
+export async function updateSpaceColor(data, spaceId, color) {
+  const space = spaceById(data, spaceId);
+  applyPickedColor(space, color);
+  await saveSpaces(data);
+  await applySpaceTheme(space);
+  return listSpaceSnapshot(data);
 }
 
 export async function switchSpace(data, spaceId) {

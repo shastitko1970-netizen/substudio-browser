@@ -239,6 +239,27 @@ user_pref("toolkit.legacyUserProfileCustomizations.stylesheets", true);
     New-Item -ItemType Directory -Force -Path $extDir | Out-Null
     Copy-Item $XpiPath (Join-Path $extDir "$CompanionId.xpi") -Force
 
+    $brandDir = Join-Path $AppRoot "branding"
+    New-Item -ItemType Directory -Force -Path $brandDir | Out-Null
+    $srcIco = Join-Path $PSScriptRoot "substudio-browser.ico"
+    $brandIco = Join-Path $brandDir "substudio-browser.ico"
+    if (Test-Path $srcIco) {
+        Copy-Item $srcIco $brandIco -Force
+        Copy-Item $srcIco (Join-Path $chromeDst "substudio-browser.ico") -Force
+    }
+    $iconUri = ""
+    if (Test-Path $brandIco) {
+        $iconUri = ConvertTo-FileUri $brandIco
+        $userJs += "`r`nuser_pref(`"identity.icon`", `"$iconUri`");`r`n"
+        [IO.File]::WriteAllText((Join-Path $ProfileDir "user.js"), $userJs, $utf8)
+    }
+
+    $launcherSrc = Join-Path $PSScriptRoot "SubStudioBrowser.exe"
+    $launcherDst = Join-Path $AppRoot "SubStudioBrowser.exe"
+    if (Test-Path $launcherSrc) {
+        Copy-Item $launcherSrc $launcherDst -Force
+    }
+
     New-Item -ItemType Directory -Force -Path $OverlayDir | Out-Null
     Copy-Item (Join-Path $RepoRoot "VERSION") $VersionFile -Force
 }
@@ -247,12 +268,20 @@ function New-Shortcut([string]$Path, $Install) {
     New-Item -ItemType Directory -Force -Path (Split-Path $Path) | Out-Null
     $wsh = New-Object -ComObject WScript.Shell
     $lnk = $wsh.CreateShortcut($Path)
-    $launcher = Join-Path $PSScriptRoot "Launch-SubStudioBrowser.ps1"
-    $lnk.TargetPath = "powershell.exe"
-    $lnk.Arguments = "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$launcher`""
-    $lnk.WorkingDirectory = $Install.Root
+    $branded = Join-Path $AppRoot "SubStudioBrowser.exe"
+    $ps1 = Join-Path $PSScriptRoot "Launch-SubStudioBrowser.ps1"
+    if (Test-Path $branded) {
+        $lnk.TargetPath = $branded
+        $lnk.Arguments = ""
+        $lnk.WorkingDirectory = $AppRoot
+    } else {
+        $lnk.TargetPath = "powershell.exe"
+        $lnk.Arguments = "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$ps1`""
+        $lnk.WorkingDirectory = $Install.Root
+    }
     $lnk.Description = "SubStudio Browser $ProductVersion"
-    $ico = Join-Path $PSScriptRoot "substudio-browser.ico"
+    $ico = Join-Path $AppRoot "branding\substudio-browser.ico"
+    if (-not (Test-Path $ico)) { $ico = Join-Path $PSScriptRoot "substudio-browser.ico" }
     $lnk.IconLocation = $(if (Test-Path $ico) { $ico } else { "$($Install.Exe),0" })
     $lnk.Save()
 }
