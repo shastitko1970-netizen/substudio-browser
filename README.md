@@ -1,4 +1,4 @@
-# SubStudio Browser 0.1.1
+# SubStudio Browser 0.1.2
 
 Личный браузер в духе Arc / Dia / Comet на **stock Firefox**, без форка Gecko. Левая колонка — companion WebExtension (как Sidebery): живые вкладки, 3×3 pins, Spaces Work/Home. Нативный tab strip скрыт userChrome. Ассистент — **Grok по официальному xAI API** справа. Прокси — SOCKS5 с логином в движке Firefox (у Chrome этого нет).
 
@@ -18,7 +18,7 @@ Daily Firefox in Program Files is never patched. Policies/AutoConfig live only o
 
 Grok sidecar: SubStudio gateway at `127.0.0.1:1234` if it is up; else official `auth.x.ai` device-code or a console.x.ai API key. Mozilla’s built-in chatbot panel is pointed at **grok.com** (website + `?q=`). The *agent* is our sidecar.
 
-Version scheme: `0.1.0` … `0.1.9` → `0.2.0` (patch is a single digit). Tag `v0.1.1`.
+Version scheme: `0.1.0` … `0.1.9` → `0.2.0` (patch is a single digit). Tag `v0.1.2`.
 
 Auto-update: **Windows launcher** reads public GitHub Releases. Extension `update_url` is secondary and only persists on Firefox Release if the XPI is AMO-signed.
 
@@ -26,8 +26,8 @@ Auto-update: **Windows launcher** reads public GitHub Releases. Extension `updat
 
 ## Установка (Windows)
 
-1. Скачайте **`SubStudioBrowser-Setup-0.1.1.exe`** из [Releases](https://github.com/shastitko1970-netizen/substudio-browser/releases/tag/v0.1.1).
-2. Откройте установщик — экран Welcome / runtime / progress / done. Не NSIS, не консоль.
+1. Скачайте **`SubStudioBrowser-Setup-0.1.2.exe`** из [Releases](https://github.com/shastitko1970-netizen/substudio-browser/releases/tag/v0.1.2).
+2. Откройте установщик — обычное окно Windows (свернуть / закрыть). Welcome / runtime / progress / done. Не NSIS, не консоль.
 3. **Fetch Firefox ESR** (рекомендуем): официальный ESR в `%LOCALAPPDATA%\SubStudioBrowser`. Unsigned Grok sidecar держится. Setup.exe ESR не содержит — качает при установке.
 4. Или **Copy the Firefox I already have** — быстрее; на обычном Release сайдбар Grok может отвалиться.
 
@@ -41,7 +41,7 @@ Auto-update: **Windows launcher** reads public GitHub Releases. Extension `updat
 setup\Uninstall-SubStudioBrowser.ps1
 ```
 
-## Что внутри 0.1.1
+## Что внутри 0.1.2
 
 | Кусок | Зачем |
 | --- | --- |
@@ -88,7 +88,7 @@ python scripts/build_release.py
 python scripts/build_setup.py
 ```
 
-GitHub Actions на теге `v0.*` публикует `SubStudioBrowser-0.1.1.zip`, `SubStudioBrowser-Setup-0.1.1.exe`, `.xpi`, `updates.json`, `.sha256`.
+GitHub Actions на теге `v0.*` публикует `SubStudioBrowser-0.1.2.zip`, `SubStudioBrowser-Setup-0.1.2.exe`, `.xpi`, `updates.json`, `.sha256`.
 
 ## Товарные знаки и лицензии
 

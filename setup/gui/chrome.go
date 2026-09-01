@@ -22,42 +22,43 @@ var (
 )
 
 const (
-	gwlStyle                      = -16
-	gwlExStyle                    = -20
-	wsCaption                     = 0x00C00000
-	wsThickFrame                  = 0x00040000
-	wsMinimizeBox                 = 0x00020000
-	wsMaximizeBox                 = 0x00010000
-	wsSysMenu                     = 0x00080000
-	wsPopup                       = 0x80000000
-	wsVisible                     = 0x10000000
-	wsExAppWindow                 = 0x00040000
-	swpNoMove                     = 0x0002
-	swpNoZOrder                   = 0x0004
-	swpFrameChanged               = 0x0020
-	wmNCLButtonDown               = 0x00A1
-	htCaption                     = 2
-	dwmwaWindowCornerPreference   = 33
-	dwmwcpRound                   = 2
+	gwlStyle                    = -16
+	gwlExStyle                  = -20
+	wsCaption                   = 0x00C00000
+	wsThickFrame                = 0x00040000
+	wsMinimizeBox               = 0x00020000
+	wsMaximizeBox               = 0x00010000
+	wsSysMenu                   = 0x00080000
+	wsPopup                     = 0x80000000
+	wsVisible                   = 0x10000000
+	wsExAppWindow               = 0x00040000
+	swpNoMove                   = 0x0002
+	swpNoZOrder                 = 0x0004
+	swpFrameChanged             = 0x0020
+	wmNCLButtonDown             = 0x00A1
+	htCaption                   = 2
+	dwmwaWindowCornerPreference = 33
+	dwmwcpDefault               = 0
 )
 
 func nIndex(v int32) uintptr {
 	return uintptr(v)
 }
 
-func makeFrameless(hwnd windows.HWND) {
+// applyDesktopChrome keeps a real Windows caption so minimize, close, and Alt+F4 work.
+func applyDesktopChrome(hwnd windows.HWND) {
 	styleIdx := int32(gwlStyle)
 	exIdx := int32(gwlExStyle)
 	style, _, _ := procGetWindowLongPtrW.Call(uintptr(hwnd), nIndex(styleIdx))
-	style &^= wsCaption | wsThickFrame | wsMinimizeBox | wsMaximizeBox | wsSysMenu
-	style |= wsPopup | wsVisible
+	style |= wsCaption | wsSysMenu | wsMinimizeBox | wsVisible
+	style &^= wsPopup | wsThickFrame | wsMaximizeBox
 	_, _, _ = procSetWindowLongPtrW.Call(uintptr(hwnd), nIndex(styleIdx), style)
 
 	ex, _, _ := procGetWindowLongPtrW.Call(uintptr(hwnd), nIndex(exIdx))
 	ex |= wsExAppWindow
 	_, _, _ = procSetWindowLongPtrW.Call(uintptr(hwnd), nIndex(exIdx), ex)
 
-	pref := int32(dwmwcpRound)
+	pref := int32(dwmwcpDefault)
 	_, _, _ = procDwmSetAttr.Call(
 		uintptr(hwnd),
 		uintptr(dwmwaWindowCornerPreference),

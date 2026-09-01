@@ -1,9 +1,9 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 # Primary auto-update path: GitHub Releases (public). Does not touch Program Files.
 param([switch]$Force)
 
 $ErrorActionPreference = "Stop"
-$Product = "0.1.1"
+$Product = "0.1.2"
 $Repo = "shastitko1970-netizen/substudio-browser"
 $AppRoot = Join-Path $env:LOCALAPPDATA "SubStudioBrowser"
 $Current = $Product

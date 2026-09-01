@@ -251,6 +251,90 @@ def test_installer_ui() -> None:
         error("private profile must not enable stock vertical tabs")
 
 
+def test_setup_host_contracts() -> None:
+    """0.1.2: real errors, real Windows chrome, no OS mock, ESR that leaves firefox.exe."""
+    html = (ROOT / "setup" / "gui" / "ui" / "index.html").read_text(encoding="utf-8")
+    css = (ROOT / "setup" / "gui" / "ui" / "styles.css").read_text(encoding="utf-8")
+    js = (ROOT / "setup" / "gui" / "ui" / "app.js").read_text(encoding="utf-8")
+    setup = (ROOT / "setup" / "Install-SubStudioBrowser.ps1").read_text(encoding="utf-8-sig")
+    setup_raw = (ROOT / "setup" / "Install-SubStudioBrowser.ps1").read_bytes()
+    install_go = (ROOT / "setup" / "gui" / "install.go").read_text(encoding="utf-8")
+    chrome_go = (ROOT / "setup" / "gui" / "chrome.go").read_text(encoding="utf-8")
+    main_go = (ROOT / "setup" / "gui" / "main.go").read_text(encoding="utf-8")
+    fallback = (ROOT / "setup" / "gui" / "ui" / "Fallback-UI.ps1").read_text(encoding="utf-8")
+    version = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
+
+    if "os-pill" in html or "data-os=" in html:
+        error("Windows Setup.exe must not show a Windows/macOS/Linux switcher")
+    if "macOS" in html or ">Linux<" in html:
+        error("Windows Setup UI still mentions other OS targets")
+    if "macOS" in fallback and "WindowStyle" in fallback:
+        error("WPF fallback must not show the OS switcher either")
+    if "WindowStyle=\"None\"" in fallback:
+        error("WPF fallback must use a real Windows caption, not WindowStyle=None")
+
+    if 'id="btn-retry"' not in html or 'id="btn-fail-close"' not in html:
+        error("failure screen must have Retry and Close buttons")
+    if "btn-retry" not in js or "btn-fail-close" not in js:
+        error("app.js must wire Retry + Close on install failure")
+    if 'id="btn-win-close"' not in html or "×" not in html:
+        error("desktop window must have a visible × close control")
+    if "btn-win-close" not in js or "ssbClose" not in js:
+        error("visible × must call window close")
+    if "F4" not in js:
+        error("UI must handle Alt+F4 as a close path")
+
+    if "makeFrameless" in main_go:
+        error("do not strip the Windows caption (makeFrameless)")
+    if "wsCaption" in chrome_go and "&^=" in chrome_go and "wsCaption" in chrome_go.split("&^=")[1][:80]:
+        error("chrome.go must not clear WS_CAPTION")
+    if "wsSysMenu" in chrome_go and "&^=" in chrome_go:
+        stripped = chrome_go.replace(" ", "")
+        if "&^=" in stripped and "wsSysMenu" in stripped.split("&^=")[1][:120]:
+            error("chrome.go must keep WS_SYSMENU so Alt+F4 / caption close work")
+
+    if "Stdout" not in install_go or "Stderr" not in install_go:
+        error("startInstall must capture PowerShell stdout and stderr, not only the jsonl")
+    if "setup.log" not in install_go:
+        error("host must persist %LOCALAPPDATA%\\SubStudioBrowser\\setup.log")
+    if 'Install failed: " + err.Error()' in install_go:
+        error("do not surface cmd.Wait() as 'Install failed: exit status 1'")
+    if "CREATE_NO_WINDOW" in install_go and "Stdout" not in install_go:
+        error("CREATE_NO_WINDOW is only allowed when pipes are captured")
+
+    if not setup_raw.startswith(b"\xef\xbb\xbf"):
+        error("Install-SubStudioBrowser.ps1 must be UTF-8 with BOM so Windows PowerShell 5.1 can parse Cyrillic")
+    if "Resolve-SsbRepoRoot" not in setup and "mozilla.cfg" not in setup.split("function Install-Overlay")[0]:
+        error("installer must resolve $RepoRoot from the extracted overlay (mozilla.cfg + distribution + extension)")
+    if "setup.log" not in setup:
+        error("installer must append the real exception to setup.log")
+
+    esr = setup
+    if "function Install-EsrRuntime" in setup:
+        esr = setup.split("function Install-EsrRuntime", 1)[1].split("\nfunction ", 1)[0]
+    if "/ExtractDir=" in esr and "msiexec" not in esr.lower() and "7z" not in esr:
+        error("ESR extract must not rely on setup.exe /ExtractDir= alone")
+    if "firefox.exe" not in esr:
+        error("ESR path must verify firefox.exe under the private runtime")
+    if "20MB" not in setup and "stub" not in setup.lower():
+        error("ESR download must reject the small stub installer")
+    if "msiexec" not in setup.lower() and "7z" not in setup:
+        error("ESR must extract via MSI (msiexec /a) or 7-Zip, not only /ExtractDir=")
+    if "InstallDirectoryPath" not in setup and "msiexec" not in setup.lower():
+        error("ESR fallback should silent-install or msiextract into LOCALAPPDATA")
+    if "core\\firefox.exe" not in setup.lower() and "core/firefox.exe" not in setup.lower():
+        error("ESR extract must look for core\\firefox.exe from the 7z SFX")
+
+    if f'$ProductVersion = "{version}"' not in setup:
+        error("ProductVersion must match VERSION")
+    if f'productVersion = "{version}"' not in main_go and f"productVersion={version}" not in (ROOT / "scripts" / "build_setup.py").read_text(encoding="utf-8"):
+        error("Setup.exe productVersion must match VERSION")
+
+    if ".stage" in css and "os-pill" in css:
+        # leftover mock chrome is ok in unused CSS only if the markup is gone; still drop the pill rules if referenced
+        pass
+
+
 def test_theme_system() -> None:
     ui = (ROOT / "extension" / "ui.css").read_text(encoding="utf-8")
     theme = (ROOT / "extension" / "lib" / "theme.js").read_text(encoding="utf-8")
@@ -418,6 +502,7 @@ def main() -> int:
     test_manifest()
     test_no_secrets()
     test_installer_ui()
+    test_setup_host_contracts()
     test_theme_system()
     test_grok_panel()
     test_substudio_brand()
