@@ -203,7 +203,7 @@ def test_installer_ui() -> None:
         error("installer art panel must keep the coral→purple gradient")
     if f"$ProductVersion = \"{version}\"" not in setup:
         error("GUI host still calls 0.1.x installer — ProductVersion mismatch")
-    if "-GuiProgress" not in setup or "Write-SsbProgress" not in setup:
+    if "$GuiProgress" not in setup or "Write-SsbProgress" not in setup:
         error("installer must emit GUI progress for Setup.exe")
     if "FetchEsr" not in setup:
         error("ESR fetch path missing")
