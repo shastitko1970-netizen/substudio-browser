@@ -46,6 +46,7 @@ def pack_overlay(dest: Path) -> Path:
         "setup",
         "scripts",
         "licenses",
+        "chrome",
     ]
     if dest.exists():
         dest.unlink()

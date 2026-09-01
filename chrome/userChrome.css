@@ -1,0 +1,105 @@
+/* SubStudio Browser private profile — sidebar / vertical tabs warmth.
+   Not a Gecko fork. Cannot make Firefox 100% Arc; we restyle chrome we can reach.
+   Enable: toolkit.legacyUserProfileCustomizations.stylesheets (set by installer). */
+
+:root {
+  --ssb-paper: #fffcf9;
+  --ssb-paper-2: #f6f1ea;
+  --ssb-ink: #14110e;
+  --ssb-muted: #7a756e;
+  --ssb-line: #e6e2d8;
+  --ssb-coral: #e56b4e;
+  --toolbar-bgcolor: var(--ssb-paper) !important;
+  --toolbar-color: var(--ssb-ink) !important;
+  --toolbar-bgimage: none !important;
+  --lwt-accent-color: var(--ssb-paper) !important;
+  --lwt-text-color: var(--ssb-ink) !important;
+  --tab-selected-bgcolor: var(--ssb-paper-2) !important;
+  --tab-hover-background-color: var(--ssb-paper-2) !important;
+  --tab-selected-textcolor: var(--ssb-ink) !important;
+  --arrowpanel-background: var(--ssb-paper) !important;
+  --arrowpanel-color: var(--ssb-ink) !important;
+  --arrowpanel-border-color: var(--ssb-line) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ssb-paper: #14110e;
+    --ssb-paper-2: #1c1814;
+    --ssb-ink: #f4efe6;
+    --ssb-muted: #9a9388;
+    --ssb-line: #2e2822;
+    --ssb-coral: #e88b6e;
+  }
+}
+
+#navigator-toolbox,
+#nav-bar,
+#PersonalToolbar,
+#titlebar,
+#TabsToolbar {
+  background-color: var(--ssb-paper) !important;
+  color: var(--ssb-ink) !important;
+}
+
+#sidebar-main,
+#sidebar-box,
+#sidebar-header,
+#sidebar,
+.sidebar-panel {
+  background-color: var(--ssb-paper) !important;
+  color: var(--ssb-ink) !important;
+  border-color: var(--ssb-line) !important;
+}
+
+#sidebar-main {
+  border-inline-end: 1px solid var(--ssb-line) !important;
+}
+
+#tabbrowser-tabs,
+#tabbrowser-arrowscrollbox {
+  background-color: transparent !important;
+}
+
+.tabbrowser-tab .tab-background {
+  border-radius: 10px !important;
+  margin-block: 2px !important;
+  margin-inline: 4px !important;
+  border: 0 !important;
+}
+
+.tabbrowser-tab:hover .tab-background {
+  background-color: var(--ssb-paper-2) !important;
+}
+
+.tabbrowser-tab[selected] .tab-background {
+  background-color: var(--ssb-paper-2) !important;
+  box-shadow: inset 0 0 0 1px var(--ssb-line) !important;
+}
+
+.tab-label {
+  color: var(--ssb-ink) !important;
+}
+
+#urlbar,
+#urlbar-background,
+#searchbar {
+  border-radius: 999px !important;
+  background-color: var(--ssb-paper-2) !important;
+  color: var(--ssb-ink) !important;
+}
+
+#urlbar-background {
+  border: 1px solid var(--ssb-line) !important;
+  box-shadow: none !important;
+}
+
+toolbarbutton {
+  border-radius: 8px !important;
+}
+
+#tabbrowser-tabbox,
+#tabbrowser-tabpanels,
+.browserStack {
+  background-color: var(--ssb-paper) !important;
+}

@@ -4,8 +4,51 @@
   let installing = false;
   let finished = false;
   let native = typeof window.ssbGetState === "function";
+  let windowsTheme = "";
+  let themeMode =
+    new URLSearchParams(location.search).get("theme") ||
+    localStorage.getItem("ssb-theme") ||
+    "system";
 
   const $ = (id) => document.getElementById(id);
+
+  function systemDark() {
+    if (windowsTheme === "dark") return true;
+    if (windowsTheme === "light") return false;
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  }
+
+  function effectiveDark() {
+    switch (themeMode) {
+      case "light":
+        return false;
+      case "dark":
+        return true;
+      case "system":
+        return systemDark();
+      default:
+        return systemDark();
+    }
+  }
+
+  function applyTheme() {
+    document.documentElement.dataset.theme = effectiveDark() ? "dark" : "light";
+    const btn = $("btn-theme");
+    if (btn) {
+      btn.title = effectiveDark() ? "Light theme" : "Dark theme";
+    }
+  }
+
+  function toggleTheme() {
+    themeMode = effectiveDark() ? "light" : "dark";
+    localStorage.setItem("ssb-theme", themeMode);
+    applyTheme();
+  }
+
+  applyTheme();
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+    if (themeMode === "system") applyTheme();
+  });
 
   function show(name) {
     screens.forEach((key) => {
@@ -24,6 +67,10 @@
     }
     if (state.destPath) {
       $("dest-path").textContent = state.destPath;
+    }
+    if (state.windowsTheme) {
+      windowsTheme = state.windowsTheme;
+      applyTheme();
     }
   }
 
@@ -117,6 +164,8 @@
   $("btn-min").addEventListener("click", () => {
     if (typeof window.ssbMinimize === "function") window.ssbMinimize();
   });
+
+  $("btn-theme").addEventListener("click", toggleTheme);
 
   document.querySelector(".art").addEventListener("mousedown", () => {
     if (typeof window.ssbDrag === "function") window.ssbDrag();

@@ -55,14 +55,83 @@
   unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
 }
 
-:root {
+:root,
+[data-theme="light"] {
+  color-scheme: light;
   --paper: #fffcf9;
   --paper-2: #f9f8f3;
-  --ink: #111111;
+  --ink: #14110e;
   --muted: #808080;
   --line: #e6e2d8;
   --coral: #e56b4e;
   --shadow: 0 22px 60px rgba(40, 24, 16, 0.18);
+  --stage: #f3ebe3;
+  --stage-warm: rgba(255, 176, 140, 0.42);
+  --stage-cool: rgba(160, 176, 220, 0.35);
+  --stage-grad: linear-gradient(180deg, #f6efe6 0%, #efe6dc 100%);
+  --pill-bg: rgba(255, 252, 247, 0.72);
+  --pill-line: rgba(255, 255, 255, 0.7);
+  --pill-ink: #9a9590;
+  --pill-on-bg: #111;
+  --pill-on-ink: #fff;
+  --lede: #5c5a56;
+  --num-line: #d9d4ca;
+  --num-ink: #6b6760;
+  --path: #8a8680;
+  --link: #222;
+  --btn: #111;
+  --btn-ink: #fff;
+  --btn-shadow: 0 10px 22px rgba(0, 0, 0, 0.16);
+  --card: #fff;
+  --card-on: #111;
+  --ico: #f4f1ea;
+  --status: #6f6c67;
+  --bar: #ece8e1;
+  --working: #3a3936;
+  --done: #111;
+  --done-ink: #fff;
+  --tip: #444;
+  --tip-ico: #f3f0ea;
+  --art: linear-gradient(180deg, #ff9e6a 0%, #e56b7a 42%, #7b5ee8 76%, #4a2d8c 100%);
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #14110e;
+  --paper-2: #1c1814;
+  --ink: #f4efe6;
+  --muted: #9a9388;
+  --line: #2e2822;
+  --coral: #e88b6e;
+  --shadow: 0 22px 60px rgba(0, 0, 0, 0.5);
+  --stage: #0c0a09;
+  --stage-warm: rgba(180, 80, 50, 0.22);
+  --stage-cool: rgba(70, 50, 110, 0.28);
+  --stage-grad: linear-gradient(180deg, #16120f 0%, #0e0c0a 100%);
+  --pill-bg: rgba(28, 24, 20, 0.78);
+  --pill-line: rgba(255, 255, 255, 0.08);
+  --pill-ink: #8a837a;
+  --pill-on-bg: #f4efe6;
+  --pill-on-ink: #14110e;
+  --lede: #c8c0b4;
+  --num-line: #3a342e;
+  --num-ink: #b4ada4;
+  --path: #8a837a;
+  --link: #f4efe6;
+  --btn: #f4efe6;
+  --btn-ink: #14110e;
+  --btn-shadow: 0 10px 22px rgba(0, 0, 0, 0.35);
+  --card: #1c1814;
+  --card-on: #f4efe6;
+  --ico: #241f1a;
+  --status: #c8c0b4;
+  --bar: #2a241e;
+  --working: #f4efe6;
+  --done: #f4efe6;
+  --done-ink: #14110e;
+  --tip: #d8d0c6;
+  --tip-ico: #241f1a;
+  --art: linear-gradient(180deg, #c46a42 0%, #a44a58 42%, #5340a8 76%, #2e1c58 100%);
 }
 
 * { box-sizing: border-box; }
@@ -70,7 +139,7 @@ html, body {
   margin: 0;
   height: 100%;
   overflow: hidden;
-  background: #f3ebe3;
+  background: var(--stage);
   color: var(--ink);
   font-family: "Inter", "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -85,9 +154,9 @@ button { font-family: inherit; }
   flex-direction: column;
   align-items: center;
   background:
-    radial-gradient(1200px 500px at 18% 0%, rgba(255, 176, 140, 0.42), transparent 55%),
-    radial-gradient(900px 520px at 92% 100%, rgba(160, 176, 220, 0.35), transparent 50%),
-    linear-gradient(180deg, #f6efe6 0%, #efe6dc 100%);
+    radial-gradient(1200px 500px at 18% 0%, var(--stage-warm), transparent 55%),
+    radial-gradient(900px 520px at 92% 100%, var(--stage-cool), transparent 50%),
+    var(--stage-grad);
 }
 
 .os-pill {
@@ -96,8 +165,8 @@ button { font-family: inherit; }
   gap: 2px;
   padding: 4px;
   border-radius: 999px;
-  background: rgba(255, 252, 247, 0.72);
-  border: 1px solid rgba(255, 255, 255, 0.7);
+  background: var(--pill-bg);
+  border: 1px solid var(--pill-line);
   box-shadow: 0 8px 24px rgba(60, 40, 20, 0.08);
   margin-bottom: 14px;
   flex-shrink: 0;
@@ -106,7 +175,7 @@ button { font-family: inherit; }
   appearance: none;
   border: 0;
   background: transparent;
-  color: #9a9590;
+  color: var(--pill-ink);
   font-size: 13px;
   font-weight: 500;
   padding: 6px 16px;
@@ -114,8 +183,8 @@ button { font-family: inherit; }
   cursor: default;
 }
 .os-pill button.on {
-  background: #111;
-  color: #fff;
+  background: var(--pill-on-bg);
+  color: var(--pill-on-ink);
 }
 .os-pill button:not(.on) { cursor: default; }
 
@@ -150,6 +219,26 @@ button { font-family: inherit; }
 .traffic .y { background: #febc2e; cursor: pointer; }
 .traffic .g { background: #28c840; }
 
+.theme-toggle {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  z-index: 6;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+.theme-toggle:hover { background: var(--paper-2); color: var(--ink); }
+.theme-toggle .sun { display: none; }
+[data-theme="dark"] .theme-toggle .moon { display: none; }
+[data-theme="dark"] .theme-toggle .sun { display: block; }
+
 .art {
   width: 34%;
   min-width: 250px;
@@ -159,7 +248,7 @@ button { font-family: inherit; }
     radial-gradient(circle at 78% 30%, rgba(196, 164, 255, 0.42), transparent 42%),
     radial-gradient(circle at 30% 78%, rgba(88, 40, 140, 0.38), transparent 38%),
     radial-gradient(circle at 70% 88%, rgba(40, 16, 72, 0.28), transparent 36%),
-    linear-gradient(180deg, #ff9e6a 0%, #e56b7a 42%, #7b5ee8 76%, #4a2d8c 100%);
+    var(--art);
 }
 .orb {
   position: absolute;
@@ -230,7 +319,7 @@ button { font-family: inherit; }
 }
 .lede {
   margin: 14px 0 0;
-  color: #5c5a56;
+  color: var(--lede);
   font-size: 14.5px;
   line-height: 1.45;
   max-width: 36em;
@@ -254,11 +343,11 @@ button { font-family: inherit; }
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  border: 1px solid #d9d4ca;
+  border: 1px solid var(--num-line);
   display: grid;
   place-items: center;
   font-size: 11px;
-  color: #6b6760;
+  color: var(--num-ink);
   margin-top: 2px;
 }
 .features strong {
@@ -285,7 +374,7 @@ button { font-family: inherit; }
 .path {
   font-family: "Cascadia Mono", "Consolas", "SFMono-Regular", ui-monospace, monospace;
   font-size: 12px;
-  color: #8a8680;
+  color: var(--path);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -294,7 +383,7 @@ button { font-family: inherit; }
   appearance: none;
   border: 0;
   background: none;
-  color: #222;
+  color: var(--link);
   font-size: 14.5px;
   font-weight: 500;
   cursor: pointer;
@@ -304,14 +393,14 @@ button { font-family: inherit; }
 .primary {
   appearance: none;
   border: 0;
-  background: #111;
-  color: #fff;
+  background: var(--btn);
+  color: var(--btn-ink);
   font-size: 14.5px;
   font-weight: 600;
   padding: 12px 26px;
   border-radius: 999px;
   cursor: pointer;
-  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.16);
+  box-shadow: var(--btn-shadow);
 }
 .primary:hover { transform: translateY(-1px); }
 .primary:disabled { opacity: 0.45; cursor: default; transform: none; }
@@ -331,11 +420,12 @@ button { font-family: inherit; }
   padding: 16px 16px 16px 14px;
   border-radius: 16px;
   border: 1px solid var(--line);
-  background: #fff;
+  background: var(--card);
+  color: var(--ink);
   cursor: pointer;
 }
 .card.on {
-  border: 2px solid #111;
+  border: 2px solid var(--card-on);
   padding: 15px 15px 15px 13px;
 }
 .card .ico {
@@ -344,8 +434,9 @@ button { font-family: inherit; }
   border-radius: 10px;
   display: grid;
   place-items: center;
-  background: #f4f1ea;
+  background: var(--ico);
   flex-shrink: 0;
+  color: var(--ink);
 }
 .card strong {
   display: block;
@@ -362,7 +453,7 @@ button { font-family: inherit; }
 
 .status {
   margin: 18px 0 0;
-  color: #6f6c67;
+  color: var(--status);
   font-size: 18px;
   font-weight: 500;
 }
@@ -370,7 +461,7 @@ button { font-family: inherit; }
   margin-top: 28px;
   height: 4px;
   border-radius: 999px;
-  background: #ece8e1;
+  background: var(--bar);
   overflow: hidden;
 }
 .bar > i {
@@ -393,15 +484,15 @@ button { font-family: inherit; }
 }
 .working {
   font-weight: 650;
-  color: #3a3936;
+  color: var(--working);
 }
 
 .done-mark {
   width: 42px;
   height: 42px;
   border-radius: 50%;
-  background: #111;
-  color: #fff;
+  background: var(--done);
+  color: var(--done-ink);
   display: grid;
   place-items: center;
   margin-bottom: 18px;
@@ -418,14 +509,14 @@ button { font-family: inherit; }
   display: flex;
   gap: 12px;
   align-items: center;
-  color: #444;
+  color: var(--tip);
   font-size: 14px;
 }
 .tips i {
   width: 34px;
   height: 28px;
   border-radius: 8px;
-  background: #f3f0ea;
+  background: var(--tip-ico);
   display: grid;
   place-items: center;
   font-style: normal;

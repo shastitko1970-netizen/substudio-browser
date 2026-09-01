@@ -6,6 +6,7 @@ export const DEFAULT_SETTINGS = {
   proxyEnabled: true,
   proxies: [],
   grokModel: "grok-4-latest",
+  uiTheme: "system",
 };
 
 export async function loadSettings() {
@@ -16,6 +17,7 @@ export async function loadSettings() {
     proxyEnabled: stored.proxyEnabled !== false,
     proxies: Array.isArray(stored.proxies) ? stored.proxies : [],
     grokModel: stored.grokModel || DEFAULT_SETTINGS.grokModel,
+    uiTheme: stored.uiTheme || DEFAULT_SETTINGS.uiTheme,
   };
 }
 

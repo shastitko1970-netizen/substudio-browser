@@ -102,6 +102,8 @@ def test_autoconfig() -> None:
         error("do not point mozilla chat at the API gateway")
     if "1808692" not in cfg:
         error("document HTTP/3 / Bug 1808692")
+    if 'defaultPref("toolkit.legacyUserProfileCustomizations.stylesheets", true)' not in cfg:
+        error("mozilla.cfg must allow private-profile userChrome")
 
 
 def test_manifest() -> None:
@@ -162,6 +164,8 @@ def test_pack_and_updates() -> None:
         "sidecar/sidecar.html",
         "command/command.html",
         "lib/grok.js",
+        "lib/theme.js",
+        "fonts/InstrumentSerif-Regular.ttf",
         "icons/icon-48.png",
     ):
         if required not in names:
@@ -178,6 +182,10 @@ def test_pack_and_updates() -> None:
         error("overlay zip missing installer")
     if any("/setup/gui/" in name for name in names):
         error("overlay zip must stay lean — Setup.exe UI is not an update payload")
+    if not any(name.endswith("chrome/userChrome.css") for name in names):
+        error("overlay zip missing chrome/userChrome.css")
+    if not any(name.endswith("chrome/userContent.css") for name in names):
+        error("overlay zip missing chrome/userContent.css")
 
 
 def test_installer_ui() -> None:
@@ -207,6 +215,31 @@ def test_installer_ui() -> None:
         error("installer must emit GUI progress for Setup.exe")
     if "FetchEsr" not in setup:
         error("ESR fetch path missing")
+    if 'id="btn-theme"' not in html:
+        error("installer must have a sun/moon theme toggle")
+    if '[data-theme="dark"]' not in css or "#14110e" not in css or "#f4efe6" not in css:
+        error("installer dark theme must invert cream paper, not a #121212 dashboard")
+    if "userChrome.css" not in setup or "toolkit.legacyUserProfileCustomizations.stylesheets" not in setup:
+        error("installer must ship userChrome into the private profile")
+
+
+def test_theme_system() -> None:
+    ui = (ROOT / "extension" / "ui.css").read_text(encoding="utf-8")
+    theme = (ROOT / "extension" / "lib" / "theme.js").read_text(encoding="utf-8")
+    chrome = (ROOT / "chrome" / "userChrome.css").read_text(encoding="utf-8")
+    content = (ROOT / "chrome" / "userContent.css").read_text(encoding="utf-8")
+    if "Instrument Serif" not in ui or "Inter" not in ui:
+        error("companion UI must use Instrument Serif + Inter")
+    if '[data-theme="dark"]' not in ui or "#fffcf9" not in ui or "#14110e" not in ui:
+        error("companion must share cream/ink light+dark tokens")
+    if "browser.theme" not in theme or "prefers-color-scheme" not in theme:
+        error("companion theme must follow browser.theme / prefers-color-scheme")
+    if "sidebar" not in chrome or "tab-background" not in chrome:
+        error("userChrome must restyle sidebar / vertical tabs")
+    if "@-moz-document" not in content:
+        error("userContent must be scoped")
+    if "url-prefix(http" in content or "url-prefix(\"http" in content:
+        error("do not restyle websites in userContent")
 
 
 def test_setup_exe() -> None:
@@ -240,6 +273,7 @@ def main() -> int:
     test_manifest()
     test_no_secrets()
     test_installer_ui()
+    test_theme_system()
     test_pack_and_updates()
     test_setup_exe()
     if ERRORS:

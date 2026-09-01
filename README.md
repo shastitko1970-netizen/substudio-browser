@@ -45,7 +45,8 @@ setup\Uninstall-SubStudioBrowser.ps1
 
 | Кусок | Зачем |
 | --- | --- |
-| Setup.exe | Свой UI (WebView2 + HTML). Тот же `Install-SubStudioBrowser.ps1` |
+| Setup.exe | Свой UI (WebView2 + HTML), светлая и тёмная бумага. Тот же `Install-SubStudioBrowser.ps1` |
+| Тема | Companion + userChrome: Instrument Serif / Inter, cream ↔ ink. Не форк Gecko, сайты не красим. |
 | Частная копия Firefox | Политики не протекают в ежедневный профиль |
 | Встроенные vertical tabs | `sidebar.revamp` + `sidebar.verticalTabs` (pref + policy `sidebar.*`, Firefox 151+) |
 | Sidecar Grok | Треды, @вкладки, навыки, chip подтверждения на close/read/cross-site |

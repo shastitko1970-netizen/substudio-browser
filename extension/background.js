@@ -27,6 +27,7 @@ async function userId() {
 
 const messageHandlers = {
   async getState() {
+    settings = await loadSettings();
     let containers;
     try {
       containers = await browser.contextualIdentities.query({});
@@ -43,11 +44,13 @@ const messageHandlers = {
   },
 
   async saveSettings(message) {
+    settings = await loadSettings();
     const next = {
       substudioHost: String(message.substudioHost || "127.0.0.1").trim(),
       substudioPort: Number(message.substudioPort) || 1234,
       proxyEnabled: Boolean(message.proxyEnabled),
       grokModel: message.grokModel || settings.grokModel,
+      uiTheme: message.uiTheme || settings.uiTheme || "system",
     };
     settings = { ...settings, ...next, proxies: settings.proxies };
     await browser.storage.local.set(next);

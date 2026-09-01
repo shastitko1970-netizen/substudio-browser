@@ -1,0 +1,29 @@
+/* SubStudio Browser — about: pages only. Do not restyle websites. */
+
+@-moz-document url("about:home"), url("about:newtab"), url("about:privatebrowsing"), url("about:firefoxview"), url("about:firefoxview-next") {
+  :root {
+    --ssb-paper: #fffcf9;
+    --ssb-ink: #14110e;
+    --ssb-muted: #7a756e;
+    --newtab-background-color: var(--ssb-paper) !important;
+    --newtab-text-primary-color: var(--ssb-ink) !important;
+    --newtab-text-secondary-color: var(--ssb-muted) !important;
+    --background-color-canvas: var(--ssb-paper) !important;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ssb-paper: #14110e;
+      --ssb-ink: #f4efe6;
+      --ssb-muted: #9a9388;
+    }
+  }
+
+  body,
+  .outer-wrapper,
+  .discovery-stream {
+    background-color: var(--ssb-paper) !important;
+    color: var(--ssb-ink) !important;
+    font-family: "Segoe UI", Inter, system-ui, sans-serif !important;
+  }
+}

@@ -23,7 +23,8 @@
     "scripting",
     "activeTab",
     "clipboardWrite",
-    "menus"
+    "menus",
+    "theme"
   ],
   "optional_permissions": [
     "tabGroups"

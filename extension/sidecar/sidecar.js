@@ -1,3 +1,7 @@
+import { bootTheme } from "../lib/theme.js";
+
+bootTheme();
+
 const $ = (id) => document.getElementById(id);
 const send = (type, payload = {}) => browser.runtime.sendMessage({ type, ...payload });
 

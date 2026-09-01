@@ -78,9 +78,14 @@ func mustBind(name string, fn interface{}) {
 
 func nativeState() map[string]string {
 	dest := filepath.Join(os.Getenv("LOCALAPPDATA"), "SubStudioBrowser")
+	scheme := "light"
+	if windowsAppsDark() {
+		scheme = "dark"
+	}
 	return map[string]string{
-		"version":  productVersion,
-		"destPath": dest,
+		"version":      productVersion,
+		"destPath":     dest,
+		"windowsTheme": scheme,
 	}
 }
 

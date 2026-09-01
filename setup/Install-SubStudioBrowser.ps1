@@ -224,8 +224,14 @@ user_pref("browser.ml.chat.hideLocalhost", false);
 user_pref("browser.startup.homepage", "about:home");
 user_pref("browser.startup.page", 1);
 user_pref("browser.shell.checkDefaultBrowser", false);
+user_pref("toolkit.legacyUserProfileCustomizations.stylesheets", true);
 "@
     [IO.File]::WriteAllText((Join-Path $ProfileDir "user.js"), $userJs, $utf8)
+    $chromeSrc = Join-Path $RepoRoot "chrome"
+    $chromeDst = Join-Path $ProfileDir "chrome"
+    New-Item -ItemType Directory -Force -Path $chromeDst | Out-Null
+    Copy-Item (Join-Path $chromeSrc "userChrome.css") (Join-Path $chromeDst "userChrome.css") -Force
+    Copy-Item (Join-Path $chromeSrc "userContent.css") (Join-Path $chromeDst "userContent.css") -Force
     $extDir = Join-Path $ProfileDir "extensions"
     New-Item -ItemType Directory -Force -Path $extDir | Out-Null
     Copy-Item $XpiPath (Join-Path $extDir "$CompanionId.xpi") -Force
