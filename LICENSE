@@ -1,0 +1,10 @@
+SubStudio Browser overlay uses two licenses.
+
+- Original work in this repository (PowerShell setup, companion WebExtension,
+  tests, documentation, icons) is MIT. See licenses/MIT.txt.
+- Files adapted from Mozilla AutoConfig / enterprise policy templates
+  (mozilla.cfg, defaults/pref/autoconfig.js, and the structure of
+  distribution/policies.json) are Mozilla Public License 2.0.
+  See licenses/MPL-2.0.txt.
+
+This project is not a Firefox fork and is not affiliated with Mozilla.

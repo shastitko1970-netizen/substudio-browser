@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <title>Grok</title>
+    <link rel="stylesheet" href="../ui.css" />
+  </head>
+  <body>
+    <div class="col">
+      <header class="top">
+        <span class="brand">Grok</span>
+        <span class="chip"><span id="dot" class="dot"></span><span id="source">…</span></span>
+        <span class="grow"></span>
+        <button id="new" class="ghost" type="button">Новый</button>
+        <button id="settings" class="ghost" type="button">⚙</button>
+      </header>
+      <div id="permits"></div>
+      <div id="messages" class="messages"></div>
+      <footer class="composer">
+        <div class="skills">
+          <button id="summarize" type="button">Сжать вкладку</button>
+          <button id="draft" type="button">Черновик</button>
+          <button id="compare" type="button">Сравнить</button>
+          <span class="muted" style="margin-left:auto">Ctrl+K · @вкладка</span>
+        </div>
+        <textarea id="input" placeholder="Спросить Grok…  @ чтобы упомянуть вкладку"></textarea>
+        <div class="row">
+          <button id="send" class="primary" type="button">Отправить</button>
+          <span id="hint" class="muted"></span>
+        </div>
+      </footer>
+    </div>
+    <script type="module" src="sidecar.js"></script>
+  </body>
+</html>

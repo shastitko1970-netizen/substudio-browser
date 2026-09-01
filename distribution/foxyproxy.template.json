@@ -1,0 +1,29 @@
+{
+  "mode": "disable",
+  "sync": false,
+  "autoBackup": false,
+  "passthrough": "localhost, 127.0.0.1, [::1]",
+  "theme": "",
+  "container": {},
+  "commands": {},
+  "data": [
+    {
+      "active": true,
+      "title": "EXAMPLE — replace hostname; leave username/password empty in git",
+      "type": "socks5",
+      "hostname": "socks.example.invalid",
+      "port": "1080",
+      "username": "",
+      "password": "",
+      "cc": "",
+      "city": "",
+      "color": "#3dcdc0",
+      "pac": "",
+      "pacString": "",
+      "proxyDNS": true,
+      "include": [],
+      "exclude": [],
+      "tabProxy": []
+    }
+  ]
+}

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <title>SubStudio Browser</title>
+    <link rel="stylesheet" href="../ui.css" />
+  </head>
+  <body>
+    <main class="wrap">
+      <header>
+        <h1>SubStudio Browser <span class="muted" id="ver"></span></h1>
+        <p class="muted">Grok — официальный xAI. Прокси браузера ≠ системный VPN. Политики живут только в копии Firefox.</p>
+      </header>
+
+      <section class="card">
+        <h2>Сессия Grok</h2>
+        <p id="session" class="muted"></p>
+        <div class="row">
+          <button id="login" class="primary" type="button">Войти через auth.x.ai</button>
+          <button id="logout" type="button">Выйти</button>
+        </div>
+        <p id="device" class="mono"></p>
+        <label class="field">Или официальный ключ с console.x.ai
+          <input id="apikey" type="password" autocomplete="off" />
+        </label>
+        <button id="save-key" type="button">Сохранить ключ</button>
+        <p class="muted">Если запущен шлюз SubStudio на :1234 — он используется первым (там уже есть xAI OAuth).</p>
+      </section>
+
+      <section class="card">
+        <h2>Шлюз SubStudio</h2>
+        <div class="row">
+          <label class="field">Хост<input id="host" /></label>
+          <label class="field">Порт<input id="port" type="number" /></label>
+        </div>
+        <label class="row"><input id="proxy-enabled" type="checkbox" /> Маршрутизировать SOCKS5 этим расширением</label>
+        <button id="save-settings" class="primary" type="button">Сохранить</button>
+      </section>
+
+      <section class="card">
+        <h2>Память</h2>
+        <p class="muted">Локально, AES-GCM, ключ от Grok user id. Треды xAI Responses хранятся на стороне xAI 30 дней.</p>
+        <div id="notes"></div>
+        <div class="row">
+          <button id="export-mem" type="button">Экспорт</button>
+          <button id="clear-mem" type="button">Очистить</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Контейнеры</h2>
+        <button id="ensure" type="button">Создать X / Grok / Work / Direct</button>
+        <div id="containers"></div>
+      </section>
+
+      <section class="card">
+        <h2>SOCKS5</h2>
+        <p class="muted">Логин и пароль только в storage этого профиля. Не коммитить.</p>
+        <div id="proxies"></div>
+        <form id="proxy-form" class="row" style="flex-wrap:wrap">
+          <input type="hidden" name="id" />
+          <label class="field">Имя<input name="name" /></label>
+          <label class="field">Хост<input name="host" required /></label>
+          <label class="field">Порт<input name="port" type="number" value="1080" /></label>
+          <label class="field">Пользователь<input name="username" autocomplete="off" /></label>
+          <label class="field">Пароль<input name="password" type="password" autocomplete="new-password" /></label>
+          <label class="field">Контейнер<select name="cookieStoreId" id="proxy-container"></select></label>
+          <button type="submit">Сохранить профиль</button>
+          <button id="export-foxy" type="button">Экспорт FoxyProxy</button>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>Обновления</h2>
+        <p class="muted">Основной путь — Windows launcher (GitHub Releases). update_url расширения вторичен и требует подписанный XPI.</p>
+        <button id="check-upd" type="button">Проверить обновления</button>
+        <p id="upd" class="muted"></p>
+      </section>
+    </main>
+    <script type="module" src="options.js"></script>
+  </body>
+</html>

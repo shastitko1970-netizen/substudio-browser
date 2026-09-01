@@ -1,0 +1,105 @@
+{
+  "policies": {
+    "policies_Comment": "SubStudio Browser 0.1.0. Applied only to the copied runtime under %LOCALAPPDATA%\\SubStudioBrowser\\runtime — never to Program Files. Schema: firefox-admin-docs / policy-templates.",
+    "BlockAboutConfig_Comment": "Intentionally omitted.",
+    "DisableTelemetry_Comment": "Intentionally omitted. Stock telemetry only.",
+    "Proxy_Comment": "Intentionally omitted. No SOCKS secrets in policy.",
+
+    "DontCheckDefaultBrowser": true,
+    "OverrideFirstRunPage": "",
+    "OverridePostUpdatePage": "",
+
+    "Homepage": {
+      "URL": "about:home",
+      "Locked": false,
+      "StartPage": "homepage"
+    },
+
+    "FirefoxHome": {
+      "Search": true,
+      "TopSites": true,
+      "SponsoredTopSites": false,
+      "Highlights": true,
+      "Pocket": false,
+      "Stories": false,
+      "SponsoredPocket": false,
+      "SponsoredStories": false,
+      "Snippets": false,
+      "Locked": false
+    },
+
+    "UserMessaging": {
+      "ExtensionRecommendations": false,
+      "FeatureRecommendations": false,
+      "UrlbarInterventions": false,
+      "SkipOnboarding": true,
+      "MoreFromMozilla": false,
+      "FirefoxLabs": true,
+      "Locked": false
+    },
+
+    "HttpAllowlist": [
+      "http://127.0.0.1",
+      "http://localhost"
+    ],
+
+    "Containers": {
+      "Default": [
+        { "name": "X", "icon": "fingerprint", "color": "purple" },
+        { "name": "Grok", "icon": "chill", "color": "orange" },
+        { "name": "Work", "icon": "briefcase", "color": "blue" },
+        { "name": "Direct", "icon": "fence", "color": "green" }
+      ]
+    },
+
+    "ExtensionUpdate": true,
+    "InstallAddonsPermission": {
+      "Default": true
+    },
+
+    "ExtensionSettings": {
+      "*": {
+        "installation_mode": "allowed",
+        "install_sources": [
+          "https://addons.mozilla.org/*",
+          "https://github.com/shastitko1970-netizen/substudio-browser/*",
+          "file:///*"
+        ]
+      },
+      "foxyproxy@eric.h.jung": {
+        "installation_mode": "force_installed",
+        "install_url": "https://addons.mozilla.org/firefox/downloads/latest/foxyproxy@eric.h.jung/latest.xpi",
+        "default_area": "navbar",
+        "private_browsing": true
+      },
+      "@testpilot-containers": {
+        "installation_mode": "force_installed",
+        "install_url": "https://addons.mozilla.org/firefox/downloads/latest/@testpilot-containers/latest.xpi",
+        "default_area": "navbar",
+        "private_browsing": true
+      },
+      "substudio-companion@substudio.browser": {
+        "installation_mode": "force_installed",
+        "install_url": "file:///__SUBSTUDIO_COMPANION_XPI__",
+        "default_area": "navbar",
+        "private_browsing": true
+      }
+    },
+
+    "Preferences": {
+      "network.proxy.socks_remote_dns": { "Value": true, "Status": "default" },
+      "network.proxy.socks5_remote_dns": { "Value": true, "Status": "default" },
+      "network.http.http3.enable": { "Value": false, "Status": "default" },
+      "privacy.userContext.enabled": { "Value": true, "Status": "default" },
+      "privacy.userContext.ui.enabled": { "Value": true, "Status": "default" },
+      "sidebar.revamp": { "Value": true, "Status": "user" },
+      "sidebar.verticalTabs": { "Value": true, "Status": "user" },
+      "browser.ml.chat.enabled": { "Value": true, "Status": "default" },
+      "browser.ml.chat.hideLocalhost": { "Value": false, "Status": "default" },
+      "browser.ml.chat.provider": { "Value": "https://grok.com", "Status": "default" },
+      "xpinstall.signatures.required": { "Value": false, "Status": "default" }
+    },
+
+    "Preferences_Comment": "sidebar.* enterprise prefix is documented since Firefox 151 (firefox-admin-docs Preferences). Also set in mozilla.cfg / profile user.js. browser.ml.chat.provider=https://grok.com is the stock Mozilla website panel (?q=), not our API agent. xpinstall.signatures.required=false works on ESR/Dev/Nightly copies only."
+  }
+}

@@ -1,0 +1,11 @@
+.DS_Store
+Thumbs.db
+*.zip
+__pycache__/
+*.pyc
+.venv/
+node_modules/
+/dist/
+agent-tools/
+*.user.json
+secrets/

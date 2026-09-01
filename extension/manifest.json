@@ -1,0 +1,76 @@
+{
+  "manifest_version": 3,
+  "name": "SubStudio Companion",
+  "version": "0.1.0",
+  "description": "Grok sidecar, command bar, containers and SOCKS5 for SubStudio Browser.",
+  "default_locale": "ru",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "substudio-companion@substudio.browser",
+      "strict_min_version": "128.0",
+      "update_url": "https://github.com/shastitko1970-netizen/substudio-browser/releases/latest/download/updates.json",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
+    }
+  },
+  "permissions": [
+    "proxy",
+    "storage",
+    "contextualIdentities",
+    "cookies",
+    "tabs",
+    "scripting",
+    "activeTab",
+    "clipboardWrite",
+    "menus"
+  ],
+  "optional_permissions": [
+    "tabGroups"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "scripts": ["background.js"],
+    "type": "module"
+  },
+  "action": {
+    "default_title": "SubStudio",
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png"
+    }
+  },
+  "sidebar_action": {
+    "default_title": "Grok",
+    "default_panel": "sidecar/sidecar.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png"
+    },
+    "open_at_install": true
+  },
+  "options_ui": {
+    "page": "options/options.html",
+    "open_in_tab": true
+  },
+  "commands": {
+    "command-bar": {
+      "suggested_key": { "default": "Ctrl+K", "mac": "Command+K" },
+      "description": "Command bar"
+    },
+    "toggle-sidecar": {
+      "suggested_key": { "default": "Ctrl+Shift+G" },
+      "description": "Open Grok sidecar"
+    }
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "96": "icons/icon-96.png"
+  }
+}
