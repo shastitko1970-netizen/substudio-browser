@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import re
+import shutil
 import sys
 import zipfile
 from pathlib import Path
@@ -31,8 +32,6 @@ def test_version() -> None:
 
     version = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
     parse(version)
-    if version != "0.1.0":
-        error(f"first release must be 0.1.0, got {version}")
     if bump("0.1.9") != "0.2.0":
         error("0.1.9 must bump to 0.2.0")
     if bump("0.1.0") != "0.1.1":
@@ -134,7 +133,7 @@ def test_no_secrets() -> None:
     for path in ROOT.rglob("*"):
         if not path.is_file() or any(part in skip for part in path.parts):
             continue
-        if path.suffix.lower() in {".png", ".ico", ".xpi", ".zip"}:
+        if path.suffix.lower() in {".png", ".ico", ".xpi", ".zip", ".ttf", ".woff2", ".exe"}:
             continue
         text = path.read_text(encoding="utf-8", errors="ignore")
         if secretish.search(text) and "example.invalid" not in text:
@@ -148,8 +147,9 @@ def test_pack_and_updates() -> None:
 
     build()
     dist = ROOT / "dist"
-    xpi = dist / "substudio-companion-0.1.0.xpi"
-    overlay = dist / "SubStudioBrowser-0.1.0.zip"
+    version = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
+    xpi = dist / f"substudio-companion-{version}.xpi"
+    overlay = dist / f"SubStudioBrowser-{version}.zip"
     updates = load_json(dist / "updates.json")
     if not xpi.exists() or not overlay.exists():
         error("release artifacts missing")
@@ -172,6 +172,64 @@ def test_pack_and_updates() -> None:
         error("updates.json must include sha512")
     if "https://" not in str(entry.get("update_link", "")):
         error("update_link must be HTTPS")
+    with zipfile.ZipFile(overlay) as archive:
+        names = archive.namelist()
+    if not any(name.endswith("Install-SubStudioBrowser.ps1") for name in names):
+        error("overlay zip missing installer")
+    if any("/setup/gui/" in name for name in names):
+        error("overlay zip must stay lean — Setup.exe UI is not an update payload")
+
+
+def test_installer_ui() -> None:
+    html = (ROOT / "setup" / "gui" / "ui" / "index.html").read_text(encoding="utf-8")
+    css = (ROOT / "setup" / "gui" / "ui" / "styles.css").read_text(encoding="utf-8")
+    setup = (ROOT / "setup" / "Install-SubStudioBrowser.ps1").read_text(encoding="utf-8")
+    version = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
+    for needle in (
+        "Install a browser",
+        "How should Grok live?",
+        "Putting the studio on this machine.",
+        "It’s yours.",
+        "Fetch Firefox ESR",
+        "Copy the Firefox I already have",
+        "Install SubStudio",
+        "Launch SubStudio",
+    ):
+        if needle not in html:
+            error(f"installer UI missing {needle!r}")
+    if "Instrument Serif" not in css or "Inter" not in css:
+        error("installer UI must use Instrument Serif + Inter")
+    if "#ff9e6a" not in css.lower() and "#FF9E6A" not in css:
+        error("installer art panel must keep the coral→purple gradient")
+    if f"$ProductVersion = \"{version}\"" not in setup:
+        error("GUI host still calls 0.1.x installer — ProductVersion mismatch")
+    if "-GuiProgress" not in setup or "Write-SsbProgress" not in setup:
+        error("installer must emit GUI progress for Setup.exe")
+    if "FetchEsr" not in setup:
+        error("ESR fetch path missing")
+
+
+def test_setup_exe() -> None:
+    if shutil.which("go") is None:
+        error("go is required to produce SubStudioBrowser-Setup.exe")
+        return
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from build_setup import main as build_setup
+
+    try:
+        build_setup()
+    except Exception as exc:
+        error(f"build_setup failed: {exc}")
+        return
+    version = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
+    exe = ROOT / "dist" / f"SubStudioBrowser-Setup-{version}.exe"
+    if not exe.exists():
+        error("Setup.exe missing after build_setup")
+        return
+    if exe.read_bytes()[:2] != b"MZ":
+        error("Setup.exe is not a Windows PE")
+    if exe.stat().st_size < 1_000_000:
+        error("Setup.exe looks too small to contain the overlay + UI")
 
 
 def main() -> int:
@@ -181,7 +239,9 @@ def main() -> int:
     test_autoconfig()
     test_manifest()
     test_no_secrets()
+    test_installer_ui()
     test_pack_and_updates()
+    test_setup_exe()
     if ERRORS:
         print("FAIL")
         for item in ERRORS:

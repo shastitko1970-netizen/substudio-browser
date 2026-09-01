@@ -16,19 +16,37 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
       - name: Test
         run: python tests/test_overlay.py
-      - name: Build
+      - name: Build overlay
         run: python scripts/build_release.py
+      - name: Build Setup.exe
+        run: python scripts/build_setup.py
       - name: Publish
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="${GITHUB_REF_NAME}"
-          gh release create "$TAG" \
-            --title "SubStudio Browser ${TAG#v}" \
-            --notes "Overlay + companion + updates.json. Launcher is the primary updater. Extension update_url needs a signed XPI on Firefox Release." \
-            dist/SubStudioBrowser-*.zip \
-            dist/SubStudioBrowser-*.zip.sha256 \
-            dist/substudio-companion-*.xpi \
+          NOTES="$(cat <<'EOF'
+          Overlay + companion + Windows Setup.exe. ESR is fetched at install time (Setup.exe stays small). Launcher is the primary updater. Extension update_url needs a signed XPI on Firefox Release.
+          EOF
+          )"
+          ASSETS=(
+            dist/SubStudioBrowser-*.zip
+            dist/SubStudioBrowser-*.zip.sha256
+            dist/SubStudioBrowser-Setup-*.exe
+            dist/SubStudioBrowser-Setup-*.exe.sha256
+            dist/substudio-companion-*.xpi
             dist/updates.json
+          )
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "${ASSETS[@]}" --clobber
+          else
+            gh release create "$TAG" \
+              --title "SubStudio Browser ${TAG#v}" \
+              --notes "$NOTES" \
+              "${ASSETS[@]}"
+          fi

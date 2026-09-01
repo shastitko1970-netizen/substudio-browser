@@ -6,6 +6,7 @@ __pycache__/
 .venv/
 node_modules/
 /dist/
+setup/gui/overlay.zip
 agent-tools/
 *.user.json
 secrets/

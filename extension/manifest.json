@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "SubStudio Companion",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Grok sidecar, command bar, containers and SOCKS5 for SubStudio Browser.",
   "default_locale": "ru",
   "browser_specific_settings": {

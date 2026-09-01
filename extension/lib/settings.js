@@ -1,4 +1,4 @@
-export const PRODUCT_VERSION = "0.1.0";
+export const PRODUCT_VERSION = "0.1.1";
 
 export const DEFAULT_SETTINGS = {
   substudioHost: "127.0.0.1",
