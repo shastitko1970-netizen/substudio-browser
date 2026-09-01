@@ -15,17 +15,41 @@ import { checkUpdate } from "./lib/update.js";
 import {
   applySpaceTheme,
   applySpaceVisibility,
+  closeTab,
+  createFolder,
   listSpaceSnapshot,
   loadSpaces,
   newTabInSpace,
   openLibrary,
+  pinTab,
+  setTabFolder,
   setTabSpace,
   spaceById,
   switchSpace,
-  togglePin,
+  toggleFolder,
 } from "./lib/spaces.js";
 
 let settings = { ...DEFAULT_SETTINGS };
+
+const NAV_PANEL = () => browser.runtime.getURL("nav/nav.html");
+const GROK_PAGE = () => browser.runtime.getURL("sidecar/sidecar.html");
+
+function grokViews() {
+  if (typeof browser.extension?.getViews !== "function") return [];
+  return browser.extension.getViews().filter((win) => String(win.location?.href || "").includes("sidecar/sidecar.html"));
+}
+
+async function ensureSpaceBar() {
+  if (!browser.sidebarAction?.setPanel) return;
+  await browser.sidebarAction.setPanel({ panel: NAV_PANEL() });
+  if (browser.sidebarAction.open) {
+    try {
+      await browser.sidebarAction.open();
+    } catch {
+      /* user gesture required on some channels */
+    }
+  }
+}
 
 async function boot() {
   settings = await loadSettings();
@@ -33,6 +57,7 @@ async function boot() {
   const spaces = await loadSpaces();
   await applySpaceTheme(spaceById(spaces, spaces.activeId));
   await applySpaceVisibility(spaces);
+  await ensureSpaceBar();
 }
 
 async function userId() {
@@ -270,8 +295,45 @@ const messageHandlers = {
     if (!tab) return { error: "no tab" };
     const spaces = await loadSpaces();
     await setTabSpace(tab.id, spaces.activeId);
-    await togglePin(tab.id);
+    await pinTab(tab.id, true);
     return listSpaceSnapshot(spaces);
+  },
+
+  async pinTab(message) {
+    await pinTab(message.tabId, message.pinned !== false);
+    return listSpaceSnapshot(await loadSpaces());
+  },
+
+  async closeTab(message) {
+    await closeTab(message.tabId);
+    return { ok: true };
+  },
+
+  async moveTabSpace(message) {
+    await setTabSpace(message.tabId, String(message.spaceId || "work"));
+    const spaces = await loadSpaces();
+    await applySpaceVisibility(spaces);
+    return listSpaceSnapshot(spaces);
+  },
+
+  async assignFolder(message) {
+    const spaces = await loadSpaces();
+    let folderId = message.folderId;
+    if (!folderId && message.title) {
+      folderId = (await createFolder(spaces, message.title)).id;
+    }
+    if (folderId) await setTabFolder(message.tabId, folderId);
+    return listSpaceSnapshot(await loadSpaces());
+  },
+
+  async createFolder(message) {
+    const spaces = await loadSpaces();
+    await createFolder(spaces, message.title);
+    return listSpaceSnapshot(spaces);
+  },
+
+  async toggleFolder(message) {
+    return toggleFolder(await loadSpaces(), String(message.folderId || ""));
   },
 
   async openLibrary() {
@@ -279,32 +341,34 @@ const messageHandlers = {
   },
 
   async focusFolder(message) {
-    if (!browser.tabGroups?.query || !browser.tabs.group) {
-      return { error: "tabGroups unsupported — folder rows are labels until Firefox tab groups exist" };
-    }
-    const spaces = await loadSpaces();
-    const folder = (spaces.folders || []).find((item) => item.id === message.folderId);
-    if (!folder) return { error: "unknown folder" };
-    const snap = await listSpaceSnapshot(spaces);
-    const ids = snap.tabs.slice(0, 3).map((item) => item.id);
-    if (!ids.length) return { ok: true };
-    const groupId = await browser.tabs.group({ tabIds: ids });
-    await browser.tabGroups.update(groupId, { title: folder.title, color: "blue" });
-    return { groupId };
+    return toggleFolder(await loadSpaces(), String(message.folderId || ""));
   },
 
   async openSpaceBar() {
-    if (!browser.sidebarAction?.setPanel) return { error: "no sidebar" };
-    await browser.sidebarAction.setPanel({ panel: browser.runtime.getURL("nav/nav.html") });
-    if (browser.sidebarAction.open) await browser.sidebarAction.open();
+    await ensureSpaceBar();
     return { ok: true };
   },
 
   async openGrok() {
-    if (!browser.sidebarAction?.setPanel) return { error: "no sidebar" };
-    await browser.sidebarAction.setPanel({ panel: browser.runtime.getURL("sidecar/sidecar.html") });
-    if (browser.sidebarAction.open) await browser.sidebarAction.open();
-    return { ok: true };
+    const views = grokViews();
+    if (views.length) {
+      for (const win of views) {
+        try {
+          win.postMessage({ type: "ssb-focus" }, "*");
+          win.focus?.();
+        } catch {
+          /* view gone */
+        }
+      }
+      return { ok: true, docked: true };
+    }
+    await browser.windows.create({
+      url: GROK_PAGE(),
+      type: "popup",
+      width: 380,
+      height: 720,
+    });
+    return { ok: true, docked: false };
   },
 };
 
@@ -331,6 +395,10 @@ browser.commands.onCommand.addListener(async (command) => {
   if (command === "toggle-spaces") {
     await messageHandlers.openSpaceBar();
   }
+});
+
+browser.runtime.onInstalled.addListener(() => {
+  ensureSpaceBar();
 });
 
 browser.tabs.onCreated.addListener(async (tab) => {

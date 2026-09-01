@@ -64,8 +64,8 @@ def test_policies() -> None:
     if "BlockAboutConfig" in policies:
         error("do not block about:config")
     prefs = policies.get("Preferences") or {}
-    if prefs.get("sidebar.verticalTabs", {}).get("Value") is not True:
-        error("sidebar.verticalTabs should be true")
+    if prefs.get("sidebar.verticalTabs", {}).get("Value") is not False:
+        error("sidebar.verticalTabs must stay false — companion owns the tab strip")
     if prefs.get("browser.ml.chat.provider", {}).get("Value") != "https://grok.com":
         error("stock AI panel should point at grok.com")
     settings = policies.get("ExtensionSettings") or {}
@@ -94,10 +94,15 @@ def test_autoconfig() -> None:
     cfg = (ROOT / "mozilla.cfg").read_text(encoding="utf-8")
     if not cfg.lstrip().startswith("//"):
         error("mozilla.cfg first line must be a comment")
-    if 'defaultPref("sidebar.verticalTabs", true)' not in cfg:
-        error("mozilla.cfg must enable vertical tabs")
+    if 'defaultPref("sidebar.verticalTabs", false)' not in cfg:
+        error("mozilla.cfg must disable stock vertical tabs so the companion owns the strip")
     if 'defaultPref("sidebar.position_start", true)' not in cfg:
-        error("vertical Space bar should start on the left")
+        error("Space bar sidebar_action should start on the left")
+    if "substudio-chrome.js" not in cfg:
+        error("mozilla.cfg must load substudio-chrome.js for the Grok right dock")
+    autoconfig = (ROOT / "defaults" / "pref" / "autoconfig.js").read_text(encoding="utf-8")
+    if 'pref("general.config.sandbox_enabled", false)' not in autoconfig:
+        error("AutoConfig sandbox must be off so the Grok dock can inject")
     if 'defaultPref("browser.ml.chat.provider", "https://grok.com")' not in cfg:
         error("stock panel provider must be grok.com")
     if "127.0.0.1:1234" in cfg and "Do not point" not in cfg and "не" not in cfg:
@@ -120,11 +125,18 @@ def test_manifest() -> None:
     if not str(gecko.get("update_url", "")).startswith("https://"):
         error("update_url must be HTTPS")
     perms = set(data.get("permissions") or [])
-    for needed in ("proxy", "contextualIdentities", "storage", "tabs", "scripting"):
+    for needed in ("proxy", "contextualIdentities", "storage", "tabs", "scripting", "tabHide", "sessions"):
         if needed not in perms:
             error(f"missing permission {needed}")
-    if "sidebar_action" not in data:
-        error("sidecar sidebar_action required")
+    sidebar = data.get("sidebar_action") or {}
+    if sidebar.get("default_panel") != "nav/nav.html":
+        error("sidebar_action must be the Space bar (nav/nav.html), not Grok")
+    background = (ROOT / "extension" / "background.js").read_text(encoding="utf-8")
+    if "sidecar/sidecar.html" in background and "setPanel" in background.split("openGrok")[1][:400]:
+        error("openGrok must not steal sidebar_action from the Space bar")
+    if "setPanel" in background and "sidecar/sidecar.html" in background:
+        if "sidebarAction.setPanel({ panel: browser.runtime.getURL(\"sidecar/sidecar.html\")" in background:
+            error("do not setPanel Grok — that replaces the left tab strip")
     if "command-bar" not in (data.get("commands") or {}):
         error("Ctrl+K command-bar missing")
     if data.get("background", {}).get("type") != "module":
@@ -169,6 +181,8 @@ def test_pack_and_updates() -> None:
         "lib/theme.js",
         "lib/spaces.js",
         "nav/nav.html",
+        "nav/nav.js",
+        "sidecar/sidecar.css",
         "fonts/InstrumentSerif-Regular.ttf",
         "icons/icon-48.png",
     ):
@@ -190,6 +204,8 @@ def test_pack_and_updates() -> None:
         error("overlay zip missing chrome/userChrome.css")
     if not any(name.endswith("chrome/userContent.css") for name in names):
         error("overlay zip missing chrome/userContent.css")
+    if not any(name.endswith("substudio-chrome.js") for name in names):
+        error("overlay zip missing substudio-chrome.js")
 
 
 def test_installer_ui() -> None:
@@ -225,6 +241,10 @@ def test_installer_ui() -> None:
         error("installer dark theme must invert cream paper, not a #121212 dashboard")
     if "userChrome.css" not in setup or "toolkit.legacyUserProfileCustomizations.stylesheets" not in setup:
         error("installer must ship userChrome into the private profile")
+    if "substudio-chrome.js" not in setup:
+        error("installer must copy substudio-chrome.js next to mozilla.cfg")
+    if 'user_pref("sidebar.verticalTabs", false)' not in setup:
+        error("private profile must not enable stock vertical tabs")
 
 
 def test_theme_system() -> None:
@@ -238,17 +258,31 @@ def test_theme_system() -> None:
         error("companion must share cream/ink light+dark tokens")
     if "browser.theme" not in theme or "prefers-color-scheme" not in theme:
         error("companion theme must follow browser.theme / prefers-color-scheme")
-    if "sidebar" not in chrome or "tab-background" not in chrome:
-        error("userChrome must restyle sidebar / vertical tabs")
+    if "#sidebar-main" not in chrome or "display: none" not in chrome:
+        error("userChrome must hide the stock vertical tab strip")
     if "#TabsToolbar" not in chrome or "visibility: collapse" not in chrome:
         error("userChrome must hide stock horizontal tabs")
-    if "repeat(3, 1fr)" not in chrome or "1b1540" not in chrome:
-        error("userChrome must lay out a 3x3 pin grid on a navy/purple Space bar")
-    if "#sidebar-box" not in chrome or "order: 2" not in chrome:
-        error("userChrome must keep the Grok sidebar on the right")
+    if "#sidebar-box" not in chrome or "1b1540" not in chrome:
+        error("userChrome must paint the companion Space bar navy/purple")
+    if "#substudio-grok-box" not in chrome or "order: 2" not in chrome:
+        error("userChrome must dock Grok on the right")
     nav = (ROOT / "extension" / "nav" / "nav.html").read_text(encoding="utf-8")
-    if "New Tab" not in nav or 'id="pins"' not in nav or "Work" not in nav:
-        error("companion Space bar must include 3x3 pins, spaces, and New Tab")
+    nav_css = (ROOT / "extension" / "nav" / "nav.css").read_text(encoding="utf-8")
+    spaces = (ROOT / "extension" / "lib" / "spaces.js").read_text(encoding="utf-8")
+    if "New Tab" not in nav or 'id="pins"' not in nav:
+        error("companion Space bar must include 3x3 pins and New Tab")
+    if 'data-space="work"' not in nav or 'data-space="home"' not in nav:
+        error("companion Space bar must switch Work and Home")
+    if "repeat(3, 1fr)" not in nav_css:
+        error("companion pin grid must be 3x3")
+    if 'id: "home"' not in spaces or "switchSpace" not in spaces or "pinTab" not in spaces:
+        error("spaces.js must implement Home + real pin/space switch")
+    chrome_js = (ROOT / "substudio-chrome.js").read_text(encoding="utf-8")
+    if "substudio-companion@substudio.browser" not in chrome_js or "sidecar/sidecar.html" not in chrome_js:
+        error("substudio-chrome.js must inject the official Grok sidecar")
+    sidecar = (ROOT / "extension" / "sidecar" / "sidecar.html").read_text(encoding="utf-8")
+    if "Official xAI" not in sidecar or "Ask Grok about this Space" not in sidecar:
+        error("Grok sidecar must keep official xAI chrome")
     if "@-moz-document" not in content:
         error("userContent must be scoped")
     if "url-prefix(http" in content or "url-prefix(\"http" in content:

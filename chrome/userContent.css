@@ -2,7 +2,7 @@
 
 @-moz-document url("about:home"), url("about:newtab"), url("about:privatebrowsing"), url("about:firefoxview"), url("about:firefoxview-next") {
   :root {
-    --ssb-paper: #fffcf9;
+    --ssb-paper: #f4efe6;
     --ssb-ink: #14110e;
     --ssb-muted: #7a756e;
     --newtab-background-color: var(--ssb-paper) !important;

@@ -1,6 +1,6 @@
 # SubStudio Browser 0.1.1
 
-Личный браузер в духе Arc / Dia / Comet на **stock Firefox**, без форка Gecko. Вертикальные вкладки — встроенные Firefox (`sidebar.verticalTabs`). Ассистент — **Grok по официальному xAI API**. Прокси — SOCKS5 с логином в движке Firefox (у Chrome этого нет).
+Личный браузер в духе Arc / Dia / Comet на **stock Firefox**, без форка Gecko. Левая колонка — companion WebExtension (как Sidebery): живые вкладки, 3×3 pins, Spaces Work/Home. Нативный tab strip скрыт userChrome. Ассистент — **Grok по официальному xAI API** справа. Прокси — SOCKS5 с логином в движке Firefox (у Chrome этого нет).
 
 Это **не Firefox** в названии и не лиса на знаке.
 
@@ -46,9 +46,9 @@ setup\Uninstall-SubStudioBrowser.ps1
 | Кусок | Зачем |
 | --- | --- |
 | Setup.exe | Свой UI (WebView2 + HTML), светлая и тёмная бумага. Тот же `Install-SubStudioBrowser.ps1` |
-| Space bar | Левая колонка как Arc: navy/purple, 3×3 pins, папки, Spaces Work/Personal. Горизонтальные вкладки скрыты. Grok справа. |
+| Space bar | Companion владеет левой колонкой: navy/purple, 3×3 pins, Work/Home, папки, + New Tab. Нативные вкладки скрыты. |
 | Частная копия Firefox | Политики не протекают в ежедневный профиль |
-| Встроенные vertical tabs | `sidebar.revamp` + `sidebar.verticalTabs` (pref + policy `sidebar.*`, Firefox 151+) |
+| Grok справа | AutoConfig (`substudio-chrome.js`) стыкует sidecar. Ctrl+Shift+G не подменяет Space bar. На Release без dock — popup. ESR держит unsigned XPI. |
 | Sidecar Grok | Треды, @вкладки, навыки, chip подтверждения на close/read/cross-site |
 | Ctrl+K | Командная строка: вкладки + навыки + запрос Grok |
 | SOCKS5 + контейнеры | Как раньше: companion `proxy.onRequest` или FoxyProxy. Нет TUN. |

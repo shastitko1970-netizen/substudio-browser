@@ -208,6 +208,7 @@ function Install-Overlay($Install) {
     [IO.File]::WriteAllText((Join-Path $Install.Root "distribution\policies.json"), $policies, $utf8)
     Copy-Item (Join-Path $RepoRoot "defaults\pref\autoconfig.js") (Join-Path $Install.Root "defaults\pref\autoconfig.js") -Force
     Copy-Item (Join-Path $RepoRoot "mozilla.cfg") (Join-Path $Install.Root "mozilla.cfg") -Force
+    Copy-Item (Join-Path $RepoRoot "substudio-chrome.js") (Join-Path $Install.Root "substudio-chrome.js") -Force
 
     New-Item -ItemType Directory -Force -Path $ProfileDir | Out-Null
     $userJs = @"
@@ -217,7 +218,8 @@ user_pref("network.http.http3.enable", false);
 user_pref("privacy.userContext.enabled", true);
 user_pref("privacy.userContext.ui.enabled", true);
 user_pref("sidebar.revamp", true);
-user_pref("sidebar.verticalTabs", true);
+user_pref("sidebar.verticalTabs", false);
+user_pref("sidebar.visibility", "always-show");
 user_pref("sidebar.position_start", true);
 user_pref("browser.ml.chat.enabled", true);
 user_pref("browser.ml.chat.provider", "https://grok.com");

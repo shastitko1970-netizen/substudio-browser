@@ -9,13 +9,18 @@
     <div class="spacebar" id="spacebar">
       <header class="tools">
         <button type="button" id="logo" title="SubStudio">S</button>
-        <button type="button" id="collapse" title="Sidebar">☰</button>
         <span class="grow"></span>
-        <button type="button" id="space-work" data-space="work">Work</button>
-        <button type="button" id="space-personal" data-space="personal">Personal</button>
+        <button type="button" id="collapse" title="Sidebar" aria-label="Collapse sidebar">
+          <span class="win" aria-hidden="true"></span>
+        </button>
       </header>
 
-      <section class="pins" id="pins" aria-label="Favorites"></section>
+      <section class="pins" id="pins" aria-label="Pinned favorites"></section>
+
+      <nav class="spaces" aria-label="Spaces">
+        <button type="button" id="space-work" data-space="work">WORK</button>
+        <button type="button" id="space-home" data-space="home">HOME</button>
+      </nav>
 
       <section class="list">
         <div class="space-head" id="space-head">
@@ -29,11 +34,21 @@
       <button class="newtab" id="newtab" type="button">+ New Tab</button>
 
       <footer class="dock">
-        <button type="button" id="library" title="Library">▣</button>
+        <button type="button" id="library" title="Library" aria-label="Library">▣</button>
         <span class="grow"></span>
-        <button type="button" id="add" title="Add">+</button>
+        <button type="button" id="add" title="Pin or new folder" aria-label="Add">+</button>
       </footer>
     </div>
+
+    <menu id="menu" hidden>
+      <button type="button" data-act="pin">Pin</button>
+      <button type="button" data-act="unpin">Unpin</button>
+      <button type="button" data-act="work">Move to Work</button>
+      <button type="button" data-act="home">Move to Home</button>
+      <button type="button" data-act="folder">Add to folder…</button>
+      <button type="button" data-act="close">Close</button>
+    </menu>
+
     <script type="module" src="nav.js"></script>
   </body>
 </html>

@@ -40,6 +40,7 @@ def pack_overlay(dest: Path) -> Path:
         "README.md",
         "LICENSE",
         "mozilla.cfg",
+        "substudio-chrome.js",
         "defaults",
         "distribution",
         "extension",

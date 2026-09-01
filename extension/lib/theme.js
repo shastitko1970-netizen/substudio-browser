@@ -108,6 +108,9 @@ export function bindThemeToggle(button) {
     button.title = dark ? "Светлая тема" : "Тёмная тема";
     button.setAttribute("aria-label", button.title);
     button.dataset.theme = dark ? "dark" : "light";
+    if (button.dataset.themeCaption === "en") {
+      button.textContent = dark ? "Light" : "Dark";
+    }
   };
   button.addEventListener("click", async () => {
     await toggleTheme();

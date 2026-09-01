@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "SubStudio Companion",
   "version": "0.1.1",
-  "description": "Grok sidecar, command bar, containers and SOCKS5 for SubStudio Browser.",
+  "description": "Arc-style Space bar, Grok sidecar, command bar, containers and SOCKS5 for SubStudio Browser.",
   "default_locale": "ru",
   "browser_specific_settings": {
     "gecko": {
@@ -49,8 +49,8 @@
     }
   },
   "sidebar_action": {
-    "default_title": "Grok",
-    "default_panel": "sidecar/sidecar.html",
+    "default_title": "Spaces",
+    "default_panel": "nav/nav.html",
     "default_icon": {
       "16": "icons/icon-16.png",
       "32": "icons/icon-32.png"

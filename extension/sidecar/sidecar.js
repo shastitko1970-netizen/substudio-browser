@@ -160,7 +160,10 @@ $("compare").onclick = async () => {
   ask(`Сравни открытые вкладки и скажи, что общее и чем отличаются:\n${list}`);
 };
 
-$("spaces").onclick = () => send("openSpaceBar");
+window.addEventListener("message", (event) => {
+  if (event.data?.type !== "ssb-focus") return;
+  $("input")?.focus();
+});
 
 refreshSession();
 loadTabs();

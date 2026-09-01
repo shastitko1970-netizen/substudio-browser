@@ -1,0 +1,46 @@
+html,
+body,
+.grok-dock {
+  background: #121212;
+}
+
+html[data-theme="light"],
+html[data-theme="light"] body,
+html[data-theme="light"] .grok-dock {
+  background: var(--paper);
+}
+
+.grok-top {
+  background: transparent;
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+  align-items: flex-start;
+}
+
+.grok-brand {
+  display: grid;
+  gap: 2px;
+}
+
+.grok-brand .brand {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.subline {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.composer textarea {
+  border-radius: 999px;
+  min-height: 44px;
+  padding: 10px 14px;
+}
+
+html[data-theme="dark"] {
+  --paper: #121212;
+  --paper-2: #1a1a1a;
+  --ink: #e8e4dc;
+  --muted: #9a9388;
+  --line: #2a2a2a;
+}
