@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import struct
+import sys
 import zlib
 from pathlib import Path
 
@@ -130,6 +131,12 @@ def write_ico(path: Path, pngs: list[tuple[int, bytes]]) -> None:
 def main() -> None:
     ICONS.mkdir(parents=True, exist_ok=True)
     SETUP.mkdir(parents=True, exist_ok=True)
+    brand_src = ROOT / "substudio-browser-icon.png"
+    if not brand_src.exists():
+        sys.path.insert(0, str(ROOT / "scripts"))
+        from paint_brand_icon import main as paint_brand
+
+        paint_brand()
     brand = find_brand_png()
     png_bytes: list[tuple[int, bytes]] = []
     for size in (16, 32, 48, 96, 128, 256):

@@ -334,6 +334,9 @@ def test_substudio_brand() -> None:
     gen = (ROOT / "scripts" / "generate_icons.py").read_text(encoding="utf-8")
     if "substudio-browser-icon.png" not in gen:
         error("icon generator must prefer a brand PNG when the user supplies one")
+    brand = ROOT / "substudio-browser-icon.png"
+    if not brand.exists() or brand.read_bytes()[:8] != b"\x89PNG\r\n\x1a\n" or brand.stat().st_size < 8000:
+        error("substudio-browser-icon.png must ship (cream squircle, coral-plum glow, serif S)")
     ico = ROOT / "setup" / "substudio-browser.ico"
     if not ico.exists() or ico.stat().st_size < 200:
         error("setup/substudio-browser.ico missing — Setup.exe and shortcuts must not use the Firefox logo")
