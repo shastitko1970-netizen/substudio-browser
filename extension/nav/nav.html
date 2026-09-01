@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <title>Spaces</title>
+    <link rel="stylesheet" href="nav.css" />
+  </head>
+  <body>
+    <div class="spacebar" id="spacebar">
+      <header class="tools">
+        <button type="button" id="logo" title="SubStudio">S</button>
+        <button type="button" id="collapse" title="Sidebar">☰</button>
+        <span class="grow"></span>
+        <button type="button" id="space-work" data-space="work">Work</button>
+        <button type="button" id="space-personal" data-space="personal">Personal</button>
+      </header>
+
+      <section class="pins" id="pins" aria-label="Favorites"></section>
+
+      <section class="list">
+        <div class="space-head" id="space-head">
+          <span class="globe" aria-hidden="true"></span>
+          <span id="space-name">Work</span>
+        </div>
+        <div id="folders"></div>
+        <div id="tabs"></div>
+      </section>
+
+      <button class="newtab" id="newtab" type="button">+ New Tab</button>
+
+      <footer class="dock">
+        <button type="button" id="library" title="Library">▣</button>
+        <span class="grow"></span>
+        <button type="button" id="add" title="Add">+</button>
+      </footer>
+    </div>
+    <script type="module" src="nav.js"></script>
+  </body>
+</html>

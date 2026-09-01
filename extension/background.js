@@ -12,12 +12,27 @@ import {
 import { listThreads, saveThread, listNotes, saveNote, clearVault, exportVault } from "./lib/memory.js";
 import { listTabs, runTool, resolvePending, getPending, tabSummary } from "./lib/tabs.js";
 import { checkUpdate } from "./lib/update.js";
+import {
+  applySpaceTheme,
+  applySpaceVisibility,
+  listSpaceSnapshot,
+  loadSpaces,
+  newTabInSpace,
+  openLibrary,
+  setTabSpace,
+  spaceById,
+  switchSpace,
+  togglePin,
+} from "./lib/spaces.js";
 
 let settings = { ...DEFAULT_SETTINGS };
 
 async function boot() {
   settings = await loadSettings();
   syncProxyListener(settings);
+  const spaces = await loadSpaces();
+  await applySpaceTheme(spaceById(spaces, spaces.activeId));
+  await applySpaceVisibility(spaces);
 }
 
 async function userId() {
@@ -232,6 +247,65 @@ const messageHandlers = {
     const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
     return tab ? tabSummary(tab) : null;
   },
+
+  async spaceSnapshot() {
+    return listSpaceSnapshot(await loadSpaces());
+  },
+
+  async switchSpace(message) {
+    return switchSpace(await loadSpaces(), String(message.spaceId || "work"));
+  },
+
+  async newSpaceTab() {
+    return newTabInSpace(await loadSpaces());
+  },
+
+  async activateTab(message) {
+    await browser.tabs.update(message.tabId, { active: true });
+    return { ok: true };
+  },
+
+  async pinActiveTab() {
+    const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+    if (!tab) return { error: "no tab" };
+    const spaces = await loadSpaces();
+    await setTabSpace(tab.id, spaces.activeId);
+    await togglePin(tab.id);
+    return listSpaceSnapshot(spaces);
+  },
+
+  async openLibrary() {
+    return openLibrary();
+  },
+
+  async focusFolder(message) {
+    if (!browser.tabGroups?.query || !browser.tabs.group) {
+      return { error: "tabGroups unsupported — folder rows are labels until Firefox tab groups exist" };
+    }
+    const spaces = await loadSpaces();
+    const folder = (spaces.folders || []).find((item) => item.id === message.folderId);
+    if (!folder) return { error: "unknown folder" };
+    const snap = await listSpaceSnapshot(spaces);
+    const ids = snap.tabs.slice(0, 3).map((item) => item.id);
+    if (!ids.length) return { ok: true };
+    const groupId = await browser.tabs.group({ tabIds: ids });
+    await browser.tabGroups.update(groupId, { title: folder.title, color: "blue" });
+    return { groupId };
+  },
+
+  async openSpaceBar() {
+    if (!browser.sidebarAction?.setPanel) return { error: "no sidebar" };
+    await browser.sidebarAction.setPanel({ panel: browser.runtime.getURL("nav/nav.html") });
+    if (browser.sidebarAction.open) await browser.sidebarAction.open();
+    return { ok: true };
+  },
+
+  async openGrok() {
+    if (!browser.sidebarAction?.setPanel) return { error: "no sidebar" };
+    await browser.sidebarAction.setPanel({ panel: browser.runtime.getURL("sidecar/sidecar.html") });
+    if (browser.sidebarAction.open) await browser.sidebarAction.open();
+    return { ok: true };
+  },
 };
 
 browser.runtime.onMessage.addListener((message) => {
@@ -251,9 +325,17 @@ browser.commands.onCommand.addListener(async (command) => {
       height: 480,
     });
   }
-  if (command === "toggle-sidecar" && browser.sidebarAction?.open) {
-    await browser.sidebarAction.open();
+  if (command === "toggle-sidecar") {
+    await messageHandlers.openGrok();
   }
+  if (command === "toggle-spaces") {
+    await messageHandlers.openSpaceBar();
+  }
+});
+
+browser.tabs.onCreated.addListener(async (tab) => {
+  const spaces = await loadSpaces();
+  if (tab.id) await setTabSpace(tab.id, spaces.activeId);
 });
 
 browser.storage.onChanged.addListener((changes, area) => {

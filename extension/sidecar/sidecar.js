@@ -160,6 +160,8 @@ $("compare").onclick = async () => {
   ask(`Сравни открытые вкладки и скажи, что общее и чем отличаются:\n${list}`);
 };
 
+$("spaces").onclick = () => send("openSpaceBar");
+
 refreshSession();
 loadTabs();
 setInterval(refreshSession, 8000);

@@ -1,6 +1,6 @@
-/* SubStudio Browser private profile — sidebar / vertical tabs warmth.
-   Not a Gecko fork. Cannot make Firefox 100% Arc; we restyle chrome we can reach.
-   Enable: toolkit.legacyUserProfileCustomizations.stylesheets (set by installer). */
+/* SubStudio Browser — Arc-like left Space bar + Grok on the right.
+   Not a Gecko fork. Horizontal tabs are hidden. 3x3 pins need companion
+   pinned tabs; userChrome only lays them out. */
 
 :root {
   --ssb-paper: #fffcf9;
@@ -9,14 +9,18 @@
   --ssb-muted: #7a756e;
   --ssb-line: #e6e2d8;
   --ssb-coral: #e56b4e;
+  --ssb-space: #1b1540;
+  --ssb-space-2: #2a1a4a;
+  --ssb-space-ink: #f4efe6;
+  --ssb-tile: rgba(8, 6, 20, 0.45);
   --toolbar-bgcolor: var(--ssb-paper) !important;
   --toolbar-color: var(--ssb-ink) !important;
   --toolbar-bgimage: none !important;
-  --lwt-accent-color: var(--ssb-paper) !important;
-  --lwt-text-color: var(--ssb-ink) !important;
-  --tab-selected-bgcolor: var(--ssb-paper-2) !important;
-  --tab-hover-background-color: var(--ssb-paper-2) !important;
-  --tab-selected-textcolor: var(--ssb-ink) !important;
+  --lwt-accent-color: var(--ssb-space) !important;
+  --lwt-text-color: var(--ssb-space-ink) !important;
+  --tab-selected-bgcolor: rgba(255, 255, 255, 0.08) !important;
+  --tab-hover-background-color: rgba(255, 255, 255, 0.06) !important;
+  --tab-selected-textcolor: var(--ssb-space-ink) !important;
   --arrowpanel-background: var(--ssb-paper) !important;
   --arrowpanel-color: var(--ssb-ink) !important;
   --arrowpanel-border-color: var(--ssb-line) !important;
@@ -29,20 +33,45 @@
     --ssb-ink: #f4efe6;
     --ssb-muted: #9a9388;
     --ssb-line: #2e2822;
-    --ssb-coral: #e88b6e;
   }
 }
+
+/* Hide stock horizontal tabs. Vertical strip + companion pins replace them. */
+#TabsToolbar,
+#TabsToolbar-customization-target,
+#tabbrowser-tabs[orient="horizontal"],
+#TabsToolbar .toolbar-items {
+  visibility: collapse !important;
+  display: none !important;
+}
+
+#toolbar-menubar { display: none !important; }
 
 #navigator-toolbox,
 #nav-bar,
 #PersonalToolbar,
-#titlebar,
-#TabsToolbar {
+#titlebar {
   background-color: var(--ssb-paper) !important;
   color: var(--ssb-ink) !important;
 }
 
-#sidebar-main,
+/* Grok (extension sidebar) stays on the right of the page. */
+#browser {
+  display: flex !important;
+}
+#sidebar-main {
+  order: 0 !important;
+}
+#tabbrowser-tabbox,
+#appcontent {
+  order: 1 !important;
+  flex: 1 1 auto !important;
+}
+#sidebar-box,
+#sidebar-splitter {
+  order: 2 !important;
+}
+
 #sidebar-box,
 #sidebar-header,
 #sidebar,
@@ -52,33 +81,112 @@
   border-color: var(--ssb-line) !important;
 }
 
+/* Left Space bar: navy → purple, not beige. */
 #sidebar-main {
-  border-inline-end: 1px solid var(--ssb-line) !important;
+  width: 244px !important;
+  max-width: 280px !important;
+  min-width: 220px !important;
+  color: var(--ssb-space-ink) !important;
+  border-inline-end: 1px solid rgba(255, 255, 255, 0.06) !important;
+  background:
+    radial-gradient(circle at 20% 0%, rgba(90, 70, 160, 0.35), transparent 42%),
+    linear-gradient(180deg, var(--ssb-space) 0%, var(--ssb-space-2) 100%) !important;
 }
 
-#tabbrowser-tabs,
-#tabbrowser-arrowscrollbox {
-  background-color: transparent !important;
+#sidebar-main #tabbrowser-tabs,
+#sidebar-main #tabbrowser-arrowscrollbox,
+#sidebar-main .tabbrowser-tab {
+  background: transparent !important;
 }
 
-.tabbrowser-tab .tab-background {
-  border-radius: 10px !important;
+/* 3x3 recessed favorite tiles (companion pins the first nine). */
+#vertical-pinned-tabs-container,
+#pinned-tabs-container,
+#tabbrowser-tabs[orient="vertical"] #pinned-tabs-container,
+#sidebar-main #pinned-tabs-container {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 8px !important;
+  padding: 10px 12px 14px !important;
+  max-height: none !important;
+}
+
+#vertical-pinned-tabs-container .tabbrowser-tab,
+#pinned-tabs-container .tabbrowser-tab,
+#tabbrowser-tabs[orient="vertical"] .tabbrowser-tab[pinned] {
+  width: auto !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+#vertical-pinned-tabs-container .tab-background,
+#pinned-tabs-container .tab-background,
+#tabbrowser-tabs[orient="vertical"] .tabbrowser-tab[pinned] .tab-background {
+  border-radius: 12px !important;
+  background: var(--ssb-tile) !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06) !important;
+  margin: 0 !important;
+  min-height: 52px !important;
+}
+
+#vertical-pinned-tabs-container .tab-label-container,
+#pinned-tabs-container .tab-label-container,
+#tabbrowser-tabs[orient="vertical"] .tabbrowser-tab[pinned] .tab-label-container,
+#tabbrowser-tabs[orient="vertical"] .tabbrowser-tab[pinned] .tab-close-button {
+  display: none !important;
+}
+
+#vertical-pinned-tabs-container .tab-icon-image,
+#pinned-tabs-container .tab-icon-image,
+#tabbrowser-tabs[orient="vertical"] .tabbrowser-tab[pinned] .tab-icon-image {
+  margin: 0 auto !important;
+  width: 22px !important;
+  height: 22px !important;
+}
+
+/* Unpinned list + tab-group folders. */
+#tabbrowser-tabs[orient="vertical"] .tabbrowser-tab:not([pinned]) {
+  margin-inline: 8px !important;
   margin-block: 2px !important;
-  margin-inline: 4px !important;
+}
+
+#tabbrowser-tabs[orient="vertical"] .tabbrowser-tab:not([pinned]) .tab-background {
+  border-radius: 10px !important;
+  background: transparent !important;
   border: 0 !important;
 }
 
-.tabbrowser-tab:hover .tab-background {
-  background-color: var(--ssb-paper-2) !important;
+#tabbrowser-tabs[orient="vertical"] .tabbrowser-tab:not([pinned]):hover .tab-background,
+#tabbrowser-tabs[orient="vertical"] .tabbrowser-tab:not([pinned])[selected] .tab-background {
+  background: rgba(255, 255, 255, 0.08) !important;
 }
 
-.tabbrowser-tab[selected] .tab-background {
-  background-color: var(--ssb-paper-2) !important;
-  box-shadow: inset 0 0 0 1px var(--ssb-line) !important;
+#tabbrowser-tabs[orient="vertical"] .tab-label {
+  color: var(--ssb-space-ink) !important;
 }
 
-.tab-label {
-  color: var(--ssb-ink) !important;
+tab-group .tab-group-label-container,
+.tab-group-label-container {
+  color: var(--ssb-space-ink) !important;
+  font-weight: 600 !important;
+  padding-inline: 12px !important;
+}
+
+#tabs-newtab-button,
+#vertical-tabs-newtab-button,
+#sidebar-main #tabs-newtab-button {
+  color: rgba(244, 239, 230, 0.7) !important;
+  margin: 10px 12px !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 0 !important;
+  justify-content: flex-start !important;
+}
+
+#tabs-newtab-button .toolbarbutton-text,
+#vertical-tabs-newtab-button .toolbarbutton-text {
+  display: flex !important;
 }
 
 #urlbar,
@@ -92,10 +200,6 @@
 #urlbar-background {
   border: 1px solid var(--ssb-line) !important;
   box-shadow: none !important;
-}
-
-toolbarbutton {
-  border-radius: 8px !important;
 }
 
 #tabbrowser-tabbox,

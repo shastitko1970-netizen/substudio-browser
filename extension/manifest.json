@@ -24,7 +24,10 @@
     "activeTab",
     "clipboardWrite",
     "menus",
-    "theme"
+    "theme",
+    "sessions",
+    "bookmarks",
+    "tabHide"
   ],
   "optional_permissions": [
     "tabGroups"
@@ -66,6 +69,10 @@
     "toggle-sidecar": {
       "suggested_key": { "default": "Ctrl+Shift+G" },
       "description": "Open Grok sidecar"
+    },
+    "toggle-spaces": {
+      "suggested_key": { "default": "Ctrl+Shift+S" },
+      "description": "Open Arc-style Space bar"
     }
   },
   "icons": {

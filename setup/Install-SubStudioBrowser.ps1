@@ -218,6 +218,7 @@ user_pref("privacy.userContext.enabled", true);
 user_pref("privacy.userContext.ui.enabled", true);
 user_pref("sidebar.revamp", true);
 user_pref("sidebar.verticalTabs", true);
+user_pref("sidebar.position_start", true);
 user_pref("browser.ml.chat.enabled", true);
 user_pref("browser.ml.chat.provider", "https://grok.com");
 user_pref("browser.ml.chat.hideLocalhost", false);

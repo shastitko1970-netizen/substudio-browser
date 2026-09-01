@@ -96,6 +96,8 @@ def test_autoconfig() -> None:
         error("mozilla.cfg first line must be a comment")
     if 'defaultPref("sidebar.verticalTabs", true)' not in cfg:
         error("mozilla.cfg must enable vertical tabs")
+    if 'defaultPref("sidebar.position_start", true)' not in cfg:
+        error("vertical Space bar should start on the left")
     if 'defaultPref("browser.ml.chat.provider", "https://grok.com")' not in cfg:
         error("stock panel provider must be grok.com")
     if "127.0.0.1:1234" in cfg and "Do not point" not in cfg and "не" not in cfg:
@@ -165,6 +167,8 @@ def test_pack_and_updates() -> None:
         "command/command.html",
         "lib/grok.js",
         "lib/theme.js",
+        "lib/spaces.js",
+        "nav/nav.html",
         "fonts/InstrumentSerif-Regular.ttf",
         "icons/icon-48.png",
     ):
@@ -236,6 +240,15 @@ def test_theme_system() -> None:
         error("companion theme must follow browser.theme / prefers-color-scheme")
     if "sidebar" not in chrome or "tab-background" not in chrome:
         error("userChrome must restyle sidebar / vertical tabs")
+    if "#TabsToolbar" not in chrome or "visibility: collapse" not in chrome:
+        error("userChrome must hide stock horizontal tabs")
+    if "repeat(3, 1fr)" not in chrome or "1b1540" not in chrome:
+        error("userChrome must lay out a 3x3 pin grid on a navy/purple Space bar")
+    if "#sidebar-box" not in chrome or "order: 2" not in chrome:
+        error("userChrome must keep the Grok sidebar on the right")
+    nav = (ROOT / "extension" / "nav" / "nav.html").read_text(encoding="utf-8")
+    if "New Tab" not in nav or 'id="pins"' not in nav or "Work" not in nav:
+        error("companion Space bar must include 3x3 pins, spaces, and New Tab")
     if "@-moz-document" not in content:
         error("userContent must be scoped")
     if "url-prefix(http" in content or "url-prefix(\"http" in content:

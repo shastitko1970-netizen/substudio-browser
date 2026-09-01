@@ -5,6 +5,9 @@ bootTheme();
 const send = (type, payload = {}) => browser.runtime.sendMessage({ type, ...payload });
 const $ = (id) => document.getElementById(id);
 
+$("open-spaces").onclick = () => send("openSpaceBar");
+$("open-grok").onclick = () => send("openGrok");
+
 async function refresh() {
   const state = await send("getState");
   $("ver").textContent = state.version || "";
