@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "SubStudio Companion",
-  "version": "0.1.0",
-  "description": "Grok sidecar, command bar, containers and SOCKS5 for SubStudio Browser.",
+  "version": "0.1.1",
+  "description": "Arc-style Space bar, Grok sidecar, command bar, containers and SOCKS5 for SubStudio Browser.",
   "default_locale": "ru",
   "browser_specific_settings": {
     "gecko": {
@@ -23,7 +23,11 @@
     "scripting",
     "activeTab",
     "clipboardWrite",
-    "menus"
+    "menus",
+    "theme",
+    "sessions",
+    "bookmarks",
+    "tabHide"
   ],
   "optional_permissions": [
     "tabGroups"
@@ -45,8 +49,8 @@
     }
   },
   "sidebar_action": {
-    "default_title": "Grok",
-    "default_panel": "sidecar/sidecar.html",
+    "default_title": "Spaces",
+    "default_panel": "nav/nav.html",
     "default_icon": {
       "16": "icons/icon-16.png",
       "32": "icons/icon-32.png"
@@ -64,7 +68,15 @@
     },
     "toggle-sidecar": {
       "suggested_key": { "default": "Ctrl+Shift+G" },
-      "description": "Open Grok sidecar"
+      "description": "Toggle Grok sidecar"
+    },
+    "toggle-grok-panel": {
+      "suggested_key": { "default": "Ctrl+\\" },
+      "description": "Toggle Grok panel"
+    },
+    "toggle-spaces": {
+      "suggested_key": { "default": "Ctrl+Shift+S" },
+      "description": "Open Arc-style Space bar"
     }
   },
   "icons": {

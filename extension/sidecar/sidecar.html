@@ -4,15 +4,21 @@
     <meta charset="utf-8" />
     <title>Grok</title>
     <link rel="stylesheet" href="../ui.css" />
+    <link rel="stylesheet" href="sidecar.css" />
   </head>
   <body>
-    <div class="col">
-      <header class="top">
-        <span class="brand">Grok</span>
+    <div class="col grok-dock">
+      <header class="top grok-top">
+        <div class="grok-brand">
+          <span class="brand">Grok</span>
+          <span class="subline">Official xAI · this Space</span>
+        </div>
         <span class="chip"><span id="dot" class="dot"></span><span id="source">…</span></span>
         <span class="grow"></span>
+        <button id="theme" class="ghost" data-theme-toggle data-theme-caption="en" type="button" title="Тема">Light</button>
         <button id="new" class="ghost" type="button">Новый</button>
         <button id="settings" class="ghost" type="button">⚙</button>
+        <button id="close-grok" class="ghost" type="button" title="Close Grok">✕</button>
       </header>
       <div id="permits"></div>
       <div id="messages" class="messages"></div>
@@ -23,7 +29,7 @@
           <button id="compare" type="button">Сравнить</button>
           <span class="muted" style="margin-left:auto">Ctrl+K · @вкладка</span>
         </div>
-        <textarea id="input" placeholder="Спросить Grok…  @ чтобы упомянуть вкладку"></textarea>
+        <textarea id="input" placeholder="Ask Grok about this Space..."></textarea>
         <div class="row">
           <button id="send" class="primary" type="button">Отправить</button>
           <span id="hint" class="muted"></span>

@@ -1,8 +1,13 @@
+import { bootTheme } from "../lib/theme.js";
+
+bootTheme();
+
 const send = (type) => browser.runtime.sendMessage({ type });
 send("getState").then((state) => {
   document.getElementById("s").textContent = `${state.version} · ${state.session?.source || "нет сессии"}`;
 });
-document.getElementById("side").onclick = () => browser.sidebarAction?.open?.();
+document.getElementById("spaces").onclick = () => send("openSpaceBar");
+document.getElementById("side").onclick = () => send("openGrok");
 document.getElementById("cmd").onclick = () =>
   browser.windows.create({
     url: browser.runtime.getURL("command/command.html"),

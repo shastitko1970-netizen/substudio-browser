@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Publish public repo + Release v0.1.0. Requires: gh auth login
+# Publish public repo + Release vX.Y.Z. Requires: gh auth login
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
@@ -10,6 +10,7 @@ SLUG="$OWNER/$REPO"
 
 python3 tests/test_overlay.py
 python3 scripts/build_release.py
+python3 scripts/build_setup.py
 
 if ! gh auth status >/dev/null 2>&1; then
   echo "gh is not authenticated. Run: gh auth login" >&2
@@ -25,15 +26,38 @@ else
   git push github "v$VERSION"
 fi
 
+NOTES="$(cat <<EOF
+## SubStudio Browser $VERSION
+
+**Windows:** скачайте \`SubStudioBrowser-Setup-$VERSION.exe\` и откройте — свой установщик (не NSIS). По умолчанию качает официальный Firefox ESR в \`%LOCALAPPDATA%\\SubStudioBrowser\\runtime\`. Либо выберите «Copy the Firefox I already have». Повседневный Firefox не трогаем.
+
+**Windows:** download \`SubStudioBrowser-Setup-$VERSION.exe\`. Custom installer UI. Default: official Firefox ESR into a private folder. Or copy the Firefox you already have. Daily Firefox is never patched.
+
+ESR is fetched at install time, so Setup.exe stays small. Overlay zip is still the in-app updater payload.
+
+Unsigned companion XPI persists on ESR / Developer Edition. Firefox Release may drop the Grok sidecar.
+
+Launcher reads public GitHub Releases. This release is not a draft.
+EOF
+)"
+
 if gh release view "v$VERSION" --repo "$SLUG" >/dev/null 2>&1; then
-  echo "Release v$VERSION already exists"
+  gh release upload "v$VERSION" --repo "$SLUG" --clobber \
+    dist/SubStudioBrowser-"$VERSION".zip \
+    dist/SubStudioBrowser-"$VERSION".zip.sha256 \
+    dist/SubStudioBrowser-Setup-"$VERSION".exe \
+    dist/SubStudioBrowser-Setup-"$VERSION".exe.sha256 \
+    dist/substudio-companion-"$VERSION".xpi \
+    dist/updates.json
 else
   gh release create "v$VERSION" \
     --repo "$SLUG" \
     --title "SubStudio Browser $VERSION" \
-    --notes "Private Firefox copy + Grok sidecar. Launcher is the primary updater. Unsigned XPI needs ESR/Dev or AMO signing on Release." \
+    --notes "$NOTES" \
     dist/SubStudioBrowser-"$VERSION".zip \
     dist/SubStudioBrowser-"$VERSION".zip.sha256 \
+    dist/SubStudioBrowser-Setup-"$VERSION".exe \
+    dist/SubStudioBrowser-Setup-"$VERSION".exe.sha256 \
     dist/substudio-companion-"$VERSION".xpi \
     dist/updates.json
 fi

@@ -1,5 +1,12 @@
+import { bootTheme, loadThemeMode, setThemeMode } from "../lib/theme.js";
+
+bootTheme();
+
 const send = (type, payload = {}) => browser.runtime.sendMessage({ type, ...payload });
 const $ = (id) => document.getElementById(id);
+
+$("open-spaces").onclick = () => send("openSpaceBar");
+$("open-grok").onclick = () => send("openGrok");
 
 async function refresh() {
   const state = await send("getState");
@@ -37,7 +44,18 @@ async function refresh() {
 
   const notes = (await send("memoryNotes")).notes || [];
   $("notes").textContent = notes.map((item) => item.text).join(" · ") || "пусто";
+  const theme = await loadThemeMode();
+  document.querySelectorAll("[data-theme-mode]").forEach((node) => {
+    node.classList.toggle("on", node.getAttribute("data-theme-mode") === theme);
+  });
 }
+
+document.querySelectorAll("[data-theme-mode]").forEach((node) => {
+  node.addEventListener("click", async () => {
+    await setThemeMode(node.getAttribute("data-theme-mode"));
+    refresh();
+  });
+});
 
 $("save-settings").onclick = async () => {
   await send("saveSettings", {

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <title>Spaces</title>
+    <link rel="stylesheet" href="nav.css" />
+  </head>
+  <body>
+    <div class="spacebar" id="spacebar">
+      <header class="tools">
+        <button type="button" id="logo" title="SubStudio">S</button>
+        <span class="grow"></span>
+        <button type="button" id="collapse" title="Sidebar" aria-label="Collapse sidebar">
+          <span class="win" aria-hidden="true"></span>
+        </button>
+      </header>
+
+      <section class="pins" id="pins" aria-label="Pinned favorites"></section>
+
+      <nav class="spaces" aria-label="Spaces">
+        <button type="button" id="space-work" data-space="work">WORK</button>
+        <button type="button" id="space-home" data-space="home">HOME</button>
+        <span class="grow"></span>
+        <label class="swatch" title="Space color">
+          <input id="space-color" type="color" aria-label="Space color" />
+        </label>
+      </nav>
+
+      <section class="list">
+        <div class="space-head" id="space-head">
+          <span class="globe" aria-hidden="true"></span>
+          <span id="space-name">Work</span>
+        </div>
+        <div id="folders"></div>
+        <div id="tabs"></div>
+      </section>
+
+      <button class="newtab" id="newtab" type="button">+ New Tab</button>
+
+      <footer class="dock">
+        <button type="button" id="library" title="Library" aria-label="Library">▣</button>
+        <button type="button" id="grok-toggle" title="Grok (Ctrl+\\)" aria-label="Toggle Grok">G</button>
+        <span class="grow"></span>
+        <button type="button" id="add" title="Pin or new folder" aria-label="Add">+</button>
+      </footer>
+    </div>
+
+    <menu id="menu" hidden>
+      <button type="button" data-act="pin">Pin</button>
+      <button type="button" data-act="unpin">Unpin</button>
+      <button type="button" data-act="work">Move to Work</button>
+      <button type="button" data-act="home">Move to Home</button>
+      <button type="button" data-act="folder">Add to folder…</button>
+      <button type="button" data-act="close">Close</button>
+    </menu>
+
+    <script type="module" src="nav.js"></script>
+  </body>
+</html>

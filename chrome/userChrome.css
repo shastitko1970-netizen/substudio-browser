@@ -1,0 +1,154 @@
+/* SubStudio Browser — stock Firefox chrome, not a Gecko fork.
+   Companion owns the left Space bar. Hide native tab strips.
+   Palette is cream / coral / plum — not Arc navy. */
+
+:root {
+  --ssb-paper: #F4EFE6;
+  --ssb-window: #FFFDF8;
+  --ssb-ink: #17140F;
+  --ssb-muted: #6D6558;
+  --ssb-line: #e6e2d8;
+  --ssb-coral: #E36B4A;
+  --ssb-plum: #5B4B8A;
+  --ssb-space: #E36B4A;
+  --ssb-space-2: #5B4B8A;
+  --ssb-space-ink: #F4EFE6;
+  --ssb-grok: #1A1612;
+  --toolbar-bgcolor: var(--ssb-window) !important;
+  --toolbar-color: var(--ssb-ink) !important;
+  --toolbar-bgimage: none !important;
+  --lwt-accent-color: var(--ssb-space) !important;
+  --lwt-text-color: var(--ssb-space-ink) !important;
+  --arrowpanel-background: var(--ssb-window) !important;
+  --arrowpanel-color: var(--ssb-ink) !important;
+  --arrowpanel-border-color: var(--ssb-line) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ssb-paper: #1A1612;
+    --ssb-window: #221C16;
+    --ssb-ink: #F4EFE6;
+    --ssb-muted: #B5AA9A;
+    --ssb-line: #3a342e;
+    --ssb-coral: #F08A68;
+    --ssb-grok: #1A1612;
+  }
+}
+
+#TabsToolbar,
+#TabsToolbar-customization-target,
+#tabbrowser-tabs[orient="horizontal"],
+#TabsToolbar .toolbar-items,
+#toolbar-menubar {
+  visibility: collapse !important;
+  display: none !important;
+}
+
+#sidebar-main,
+#vertical-tabs,
+#vertical-tabs-container,
+#vertical-pinned-tabs-container,
+#tabbrowser-tabs[orient="vertical"] {
+  display: none !important;
+  visibility: collapse !important;
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+}
+
+#navigator-toolbox,
+#nav-bar,
+#PersonalToolbar,
+#titlebar {
+  background-color: var(--ssb-window) !important;
+  color: var(--ssb-ink) !important;
+}
+
+#browser {
+  display: flex !important;
+}
+
+#sidebar-box,
+#sidebar-splitter {
+  order: 0 !important;
+}
+
+#sidebar-box {
+  width: 244px !important;
+  min-width: 220px !important;
+  max-width: 320px !important;
+  color: var(--ssb-space-ink) !important;
+  border-inline-end: 1px solid rgba(23, 20, 15, 0.08) !important;
+  background:
+    radial-gradient(circle at 20% 0%, rgba(240, 138, 104, 0.28), transparent 42%),
+    linear-gradient(180deg, var(--ssb-space) 0%, var(--ssb-space-2) 100%) !important;
+}
+
+#sidebar-header {
+  display: none !important;
+}
+
+#sidebar,
+.sidebar-panel {
+  background: transparent !important;
+  border: 0 !important;
+}
+
+#tabbrowser-tabbox,
+#appcontent {
+  order: 1 !important;
+  flex: 1 1 auto !important;
+}
+
+#tabbrowser-tabbox,
+#tabbrowser-tabpanels,
+.browserStack {
+  background-color: var(--ssb-paper) !important;
+}
+
+#sidebar-box[ssb-rail="compact"] {
+  width: 72px !important;
+  min-width: 72px !important;
+  max-width: 72px !important;
+}
+
+#substudio-grok-splitter,
+#substudio-grok-box {
+  order: 2 !important;
+}
+
+#substudio-grok-box {
+  width: 320px;
+  min-width: 260px;
+  max-width: 480px;
+  background: var(--ssb-grok) !important;
+  color: #F4EFE6 !important;
+  border-inline-start: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+#substudio-grok-box[ssb-grok="closed"],
+#substudio-grok-splitter[ssb-grok="closed"] {
+  display: none !important;
+  width: 0 !important;
+  min-width: 0 !important;
+  border: 0 !important;
+}
+
+#substudio-grok-button {
+  margin-inline-start: 6px !important;
+  min-width: 36px !important;
+}
+
+#urlbar,
+#urlbar-background,
+#searchbar {
+  border-radius: 999px !important;
+  background-color: var(--ssb-window) !important;
+  color: var(--ssb-ink) !important;
+}
+
+#urlbar-background {
+  border: 1px solid var(--ssb-line) !important;
+  box-shadow: none !important;
+}

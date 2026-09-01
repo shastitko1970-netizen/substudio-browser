@@ -40,12 +40,16 @@ def pack_overlay(dest: Path) -> Path:
         "README.md",
         "LICENSE",
         "mozilla.cfg",
+        "substudio-chrome.js",
+        "substudio-bridge.js",
+        "substudio-browser-icon.png",
         "defaults",
         "distribution",
         "extension",
         "setup",
         "scripts",
         "licenses",
+        "chrome",
     ]
     if dest.exists():
         dest.unlink()
@@ -56,8 +60,18 @@ def pack_overlay(dest: Path) -> Path:
                 archive.write(path, f"SubStudioBrowser-{VERSION}/{name}")
             else:
                 for file in sorted(path.rglob("*")):
-                    if file.is_file() and file.suffix not in {".pyc"}:
-                        archive.write(file, f"SubStudioBrowser-{VERSION}/{file.relative_to(ROOT).as_posix()}")
+                    if not file.is_file():
+                        continue
+                    rel = file.relative_to(ROOT)
+                    if rel.parts[:2] == ("setup", "gui"):
+                        continue
+                    if file.name in {".DS_Store", "overlay.zip"}:
+                        continue
+                    if file.suffix in {".pyc", ".syso"}:
+                        continue
+                    if file.suffix == ".exe" and file.name != "SubStudioBrowser.exe":
+                        continue
+                    archive.write(file, f"SubStudioBrowser-{VERSION}/{rel.as_posix()}")
     return dest
 
 

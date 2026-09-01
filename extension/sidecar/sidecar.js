@@ -1,3 +1,7 @@
+import { bootTheme } from "../lib/theme.js";
+
+bootTheme();
+
 const $ = (id) => document.getElementById(id);
 const send = (type, payload = {}) => browser.runtime.sendMessage({ type, ...payload });
 
@@ -155,6 +159,13 @@ $("compare").onclick = async () => {
   const list = tabs.slice(0, 8).map((item) => `- ${item.id}: ${item.title} — ${item.url}`).join("\n");
   ask(`Сравни открытые вкладки и скажи, что общее и чем отличаются:\n${list}`);
 };
+
+window.addEventListener("message", (event) => {
+  if (event.data?.type !== "ssb-focus") return;
+  $("input")?.focus();
+});
+
+$("close-grok").onclick = () => send("toggleGrok");
 
 refreshSession();
 loadTabs();
