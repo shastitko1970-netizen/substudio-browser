@@ -227,16 +227,6 @@ function Copy-SsbRuntimeTree([string]$ExePath) {
     return $exe
 }
 
-function Expand-SsbMsi([string]$Msi, [string]$Dest) {
-    if (Test-Path -LiteralPath $Dest) { Remove-Item -LiteralPath $Dest -Recurse -Force }
-    New-Item -ItemType Directory -Force -Path $Dest | Out-Null
-    $msiexec = Join-Path $env:SystemRoot "System32\msiexec.exe"
-    Write-SsbLog "msiexec /a TARGETDIR=$Dest"
-    $proc = Start-Process -FilePath $msiexec -ArgumentList @("/a", $Msi, "TARGETDIR=$Dest", "/qn", "/norestart") -Wait -PassThru -WindowStyle Hidden
-    Write-SsbLog "msiexec exit $($proc.ExitCode)"
-    return (Find-SsbFirefoxExe $Dest)
-}
-
 function Expand-SsbSfx([string]$Exe, [string]$Dest) {
     if (Test-Path -LiteralPath $Dest) { Remove-Item -LiteralPath $Dest -Recurse -Force }
     New-Item -ItemType Directory -Force -Path $Dest | Out-Null
@@ -285,54 +275,21 @@ function Install-EsrSilent([string]$Exe) {
 
 function Install-EsrRuntime {
     Write-SsbProgress 8 "Fetching Firefox ESR..." "Скачиваю официальный Firefox ESR (unsigned XPI работает на ESR)"
-    $ver = $null
-    try {
-        $details = Invoke-RestMethod -Uri "https://product-details.mozilla.org/1.0/firefox_versions.json"
-        $ver = [string]$details.FIREFOX_ESR
-        Write-SsbLog "FIREFOX_ESR=$ver"
-    } catch {
-        Write-SsbLog "product-details failed: $($_.Exception.Message)"
-    }
-
+    # Verified 2026-09-01: product=firefox-esr-latest-ssl&os=win64 follows redirects to the
+    # full ~70MB 7z SFX (not the stub). 7z x leaves core\firefox.exe. The matching .msi is
+    # only Binary.WrappedExe of the same SFX — msiexec /a does not produce firefox.exe.
     $tmp = Join-Path $env:TEMP "ssb-esr-$ProductVersion"
     New-Item -ItemType Directory -Force -Path $tmp | Out-Null
-    $msi = Join-Path $tmp "firefox-esr.msi"
     $exe = Join-Path $tmp "firefox-esr-setup.exe"
     $stage = Join-Path $tmp "extract"
-    $kind = $null
+    $exeUrl = "https://download.mozilla.org/?product=firefox-esr-latest-ssl&os=win64&lang=en-US"
+    Get-RemoteFile -Url $exeUrl -Dest $exe -StartPct 10 -EndPct 55 -Status "Fetching Firefox ESR..." -Detail "Full ESR win64 installer (not the stub)"
+    Assert-FullPayload $exe
 
-    if ($ver) {
-        $msiUrl = "https://archive.mozilla.org/pub/firefox/releases/$ver/win64/en-US/Firefox%20Setup%20$ver.msi"
-        try {
-            Get-RemoteFile -Url $msiUrl -Dest $msi -StartPct 10 -EndPct 52 -Status "Fetching Firefox ESR..." -Detail "Full ESR MSI $ver (not the stub)"
-            Assert-FullPayload $msi
-            $kind = "msi"
-        } catch {
-            Write-SsbLog "MSI download failed: $($_.Exception.Message)"
-        }
-    }
-    if (-not $kind) {
-        $exeUrl = "https://download.mozilla.org/?product=firefox-esr-latest-ssl&os=win64&lang=en-US"
-        Get-RemoteFile -Url $exeUrl -Dest $exe -StartPct 10 -EndPct 52 -Status "Fetching Firefox ESR..." -Detail "Full ESR installer via Mozilla bouncer"
-        Assert-FullPayload $exe
-        $kind = "exe"
-    }
-
-    Write-SsbProgress 58 "Extracting ESR..." "Распаковываю ESR в $Runtime"
-    $found = $null
-    if ($kind -eq "msi") {
-        $found = Expand-SsbMsi $msi $stage
-    }
+    Write-SsbProgress 58 "Extracting ESR..." "Распаковываю ESR в $Runtime (7z core\\firefox.exe, else silent InstallDirectoryPath)"
+    $found = Expand-SsbSfx $exe $stage
     if (-not $found) {
-        if (-not (Test-Path -LiteralPath $exe)) {
-            $exeUrl = "https://download.mozilla.org/?product=firefox-esr-latest-ssl&os=win64&lang=en-US"
-            Get-RemoteFile -Url $exeUrl -Dest $exe -StartPct 54 -EndPct 62 -Status "Fetching Firefox ESR..." -Detail "Full ESR exe fallback"
-            Assert-FullPayload $exe
-        }
-        $found = Expand-SsbSfx $exe $stage
-        if (-not $found) {
-            $found = Install-EsrSilent $exe
-        }
+        $found = Install-EsrSilent $exe
     }
     if (-not $found) {
         throw "Could not place firefox.exe under $Runtime. See $SetupLog"
