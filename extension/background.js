@@ -27,6 +27,7 @@ import {
   spaceById,
   switchSpace,
   toggleFolder,
+  setSpaceGrok,
   updateSpaceColor,
 } from "./lib/spaces.js";
 
@@ -355,25 +356,44 @@ const messageHandlers = {
   },
 
   async openGrok() {
-    const views = grokViews();
-    if (views.length) {
-      for (const win of views) {
-        try {
-          win.postMessage({ type: "ssb-focus" }, "*");
-          win.focus?.();
-        } catch {
-          /* view gone */
-        }
+    return messageHandlers.toggleGrok();
+  },
+
+  async toggleGrok() {
+    const spaces = await loadSpaces();
+    const space = spaceById(spaces, spaces.activeId);
+    const next = space.grokOpen !== true;
+    await setSpaceGrok(spaces, space.id, next);
+    const views =
+      typeof browser.extension?.getViews === "function" ? browser.extension.getViews() : grokViews();
+    let signaled = false;
+    for (const win of views) {
+      try {
+        win.dispatchEvent(
+          new CustomEvent("ssb-grok-set", {
+            bubbles: true,
+            detail: { spaceId: space.id, open: next },
+          }),
+        );
+        signaled = true;
+      } catch {
+        /* view gone */
       }
-      return { ok: true, docked: true };
     }
-    await browser.windows.create({
-      url: GROK_PAGE(),
-      type: "popup",
-      width: 380,
-      height: 720,
-    });
-    return { ok: true, docked: false };
+    if (signaled) return { ok: true, docked: true, open: next };
+    if (next) {
+      await browser.windows.create({
+        url: GROK_PAGE(),
+        type: "popup",
+        width: 380,
+        height: 720,
+      });
+    }
+    return { ok: true, docked: false, open: next };
+  },
+
+  async setRailCompact(message) {
+    return { ok: true, compact: Boolean(message.compact) };
   },
 };
 
@@ -394,8 +414,8 @@ browser.commands.onCommand.addListener(async (command) => {
       height: 480,
     });
   }
-  if (command === "toggle-sidecar") {
-    await messageHandlers.openGrok();
+  if (command === "toggle-sidecar" || command === "toggle-grok-panel") {
+    await messageHandlers.toggleGrok();
   }
   if (command === "toggle-spaces") {
     await messageHandlers.openSpaceBar();

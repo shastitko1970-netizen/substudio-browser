@@ -338,3 +338,21 @@ body {
 #menu button:hover {
   background: rgba(255, 255, 255, 0.08);
 }
+
+.spacebar.compact .spaces,
+.spacebar.compact .list,
+.spacebar.compact .newtab,
+.spacebar.compact .swatch,
+.spacebar.compact .space-head span:not(.globe) {
+  display: none;
+}
+
+.spacebar.compact .pins {
+  grid-template-columns: 1fr;
+  padding: 8px 10px;
+}
+
+.spacebar.compact .dock .grow,
+.spacebar.compact #add {
+  display: none;
+}

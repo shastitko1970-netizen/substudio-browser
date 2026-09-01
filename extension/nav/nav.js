@@ -7,6 +7,8 @@ const $ = (id) => document.getElementById(id);
 
 let snapshot = null;
 let menuTab = null;
+let lastSpaceId = null;
+let railCompact = false;
 
 function favicon(url, fallback) {
   if (fallback) return fallback;
@@ -115,6 +117,14 @@ function paint(next) {
   root.classList.toggle("light", !snapshot.space.dark);
   $("space-name").textContent = snapshot.space.name;
   $("space-color").value = snapshot.space.color || snapshot.space.from;
+  if (lastSpaceId !== snapshot.space.id) {
+    lastSpaceId = snapshot.space.id;
+    const detail = { spaceId: snapshot.space.id };
+    if (typeof snapshot.space.grokOpen === "boolean") {
+      detail.open = snapshot.space.grokOpen;
+    }
+    window.dispatchEvent(new CustomEvent("ssb-grok-set", { bubbles: true, detail }));
+  }
   document.querySelectorAll("[data-space]").forEach((node) => {
     node.classList.toggle("on", node.getAttribute("data-space") === snapshot.space.id);
   });
@@ -213,8 +223,14 @@ $("add").onclick = async (event) => {
   await send("pinActiveTab").then(paint);
 };
 $("logo").onclick = () => send("switchSpace", { spaceId: "work" }).then(paint);
+$("grok-toggle").onclick = () => send("toggleGrok");
 $("collapse").onclick = () => {
-  if (browser.sidebarAction?.close) browser.sidebarAction.close();
+  railCompact = !railCompact;
+  $("spacebar").classList.toggle("compact", railCompact);
+  window.dispatchEvent(
+    new CustomEvent("ssb-rail-compact", { bubbles: true, detail: { compact: railCompact } }),
+  );
+  send("setRailCompact", { compact: railCompact });
 };
 document.addEventListener("click", (event) => {
   if (!$("menu").contains(event.target)) hideMenu();

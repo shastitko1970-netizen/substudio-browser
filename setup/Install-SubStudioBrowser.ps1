@@ -209,6 +209,7 @@ function Install-Overlay($Install) {
     Copy-Item (Join-Path $RepoRoot "defaults\pref\autoconfig.js") (Join-Path $Install.Root "defaults\pref\autoconfig.js") -Force
     Copy-Item (Join-Path $RepoRoot "mozilla.cfg") (Join-Path $Install.Root "mozilla.cfg") -Force
     Copy-Item (Join-Path $RepoRoot "substudio-chrome.js") (Join-Path $Install.Root "substudio-chrome.js") -Force
+    Copy-Item (Join-Path $RepoRoot "substudio-bridge.js") (Join-Path $Install.Root "substudio-bridge.js") -Force
 
     New-Item -ItemType Directory -Force -Path $ProfileDir | Out-Null
     $userJs = @"

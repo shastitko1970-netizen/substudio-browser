@@ -107,6 +107,12 @@
   background-color: var(--ssb-paper) !important;
 }
 
+#sidebar-box[ssb-rail="compact"] {
+  width: 72px !important;
+  min-width: 72px !important;
+  max-width: 72px !important;
+}
+
 #substudio-grok-splitter,
 #substudio-grok-box {
   order: 2 !important;
@@ -119,6 +125,19 @@
   background: var(--ssb-grok) !important;
   color: #F4EFE6 !important;
   border-inline-start: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+#substudio-grok-box[ssb-grok="closed"],
+#substudio-grok-splitter[ssb-grok="closed"] {
+  display: none !important;
+  width: 0 !important;
+  min-width: 0 !important;
+  border: 0 !important;
+}
+
+#substudio-grok-button {
+  margin-inline-start: 6px !important;
+  min-width: 36px !important;
 }
 
 #urlbar,

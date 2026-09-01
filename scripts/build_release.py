@@ -41,6 +41,7 @@ def pack_overlay(dest: Path) -> Path:
         "LICENSE",
         "mozilla.cfg",
         "substudio-chrome.js",
+        "substudio-bridge.js",
         "substudio-browser-icon.png",
         "defaults",
         "distribution",

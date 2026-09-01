@@ -68,7 +68,11 @@
     },
     "toggle-sidecar": {
       "suggested_key": { "default": "Ctrl+Shift+G" },
-      "description": "Open Grok sidecar"
+      "description": "Toggle Grok sidecar"
+    },
+    "toggle-grok-panel": {
+      "suggested_key": { "default": "Ctrl+\\" },
+      "description": "Toggle Grok panel"
     },
     "toggle-spaces": {
       "suggested_key": { "default": "Ctrl+Shift+S" },

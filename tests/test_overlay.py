@@ -139,6 +139,10 @@ def test_manifest() -> None:
             error("do not setPanel Grok — that replaces the left tab strip")
     if "command-bar" not in (data.get("commands") or {}):
         error("Ctrl+K command-bar missing")
+    if "toggle-sidecar" not in (data.get("commands") or {}):
+        error("Ctrl+Shift+G Grok toggle missing")
+    if "toggle-grok-panel" not in (data.get("commands") or {}):
+        error("Ctrl+\\ Grok panel command missing")
     if data.get("background", {}).get("type") != "module":
         error("background should be ES module")
 
@@ -350,6 +354,39 @@ def test_substudio_brand() -> None:
         error("Setup.exe build must embed the SubStudio icon")
 
 
+def test_grok_panel() -> None:
+    chrome_js = (ROOT / "substudio-chrome.js").read_text(encoding="utf-8")
+    chrome = (ROOT / "chrome" / "userChrome.css").read_text(encoding="utf-8")
+    nav = (ROOT / "extension" / "nav" / "nav.html").read_text(encoding="utf-8")
+    nav_js = (ROOT / "extension" / "nav" / "nav.js").read_text(encoding="utf-8")
+    nav_css = (ROOT / "extension" / "nav" / "nav.css").read_text(encoding="utf-8")
+    background = (ROOT / "extension" / "background.js").read_text(encoding="utf-8")
+    sidecar = (ROOT / "extension" / "sidecar" / "sidecar.html").read_text(encoding="utf-8")
+    setup = (ROOT / "setup" / "Install-SubStudioBrowser.ps1").read_text(encoding="utf-8")
+    if "ssbSetGrokOpen" not in chrome_js and "gSubStudioGrok" not in chrome_js:
+        error("chrome boot must expose a first-class Grok panel API")
+    if "default" not in chrome_js.lower() or "false" not in chrome_js:
+        error("Grok panel must default closed on first launch")
+    if "ctrlKey" not in chrome_js or "Backslash" not in chrome_js:
+        error("chrome must handle Ctrl+\\ to toggle Grok")
+    if "substudio-grok-button" not in chrome_js:
+        error("chrome must add an omnibox / toolbar Grok toggle")
+    if 'ssb-grok="closed"' not in chrome:
+        error("userChrome must hide the Grok dock when closed so the page is full width")
+    if 'id="grok-toggle"' not in nav:
+        error("Space bar footer must have a Grok toggle")
+    if "ssb-toggle-grok" not in nav_js and "toggleGrok" not in nav_js:
+        error("Space bar must fire the Grok panel toggle")
+    if "compact" not in nav_css or "ssb-rail" not in chrome:
+        error("left rail must collapse to an icon strip independently of Grok")
+    if "toggleGrok" not in background:
+        error("companion must toggle Grok, not only open a popup")
+    if "close-grok" not in sidecar and 'id="close"' not in sidecar:
+        error("Grok sidecar must have a close control")
+    if "substudio-bridge.js" not in setup:
+        error("installer must copy the chrome↔companion Grok bridge")
+
+
 def test_setup_exe() -> None:
     if shutil.which("go") is None:
         error("go is required to produce SubStudioBrowser-Setup.exe")
@@ -382,6 +419,7 @@ def main() -> int:
     test_no_secrets()
     test_installer_ui()
     test_theme_system()
+    test_grok_panel()
     test_substudio_brand()
     test_pack_and_updates()
     test_setup_exe()

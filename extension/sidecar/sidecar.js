@@ -165,6 +165,8 @@ window.addEventListener("message", (event) => {
   $("input")?.focus();
 });
 
+$("close-grok").onclick = () => send("toggleGrok");
+
 refreshSession();
 loadTabs();
 setInterval(refreshSession, 8000);

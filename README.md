@@ -48,7 +48,7 @@ setup\Uninstall-SubStudioBrowser.ps1
 | Setup.exe | Свой UI (WebView2 + HTML), светлая и тёмная бумага. Тот же `Install-SubStudioBrowser.ps1` |
 | Space bar | Companion владеет левой колонкой: 3×3 pins, Work/Home, папки, + New Tab. Цвет Space настраивается. Палитра cream/coral/plum, не Arc navy. |
 | Частная копия Firefox | Политики не протекают в ежедневный профиль |
-| Grok справа | AutoConfig (`substudio-chrome.js`) стыкует sidecar. Ctrl+Shift+G не подменяет Space bar. На Release без dock — popup. ESR держит unsigned XPI. |
+| Grok справа | Складная панель (по умолчанию закрыта). Ctrl+\\ / Ctrl+Shift+G, кнопка у адреса и в футере Space bar. Левый rail сворачивается отдельно. |
 | Sidecar Grok | Треды, @вкладки, навыки, chip подтверждения на close/read/cross-site |
 | Ctrl+K | Командная строка: вкладки + навыки + запрос Grok |
 | SOCKS5 + контейнеры | Как раньше: companion `proxy.onRequest` или FoxyProxy. Нет TUN. |

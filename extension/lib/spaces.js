@@ -318,6 +318,7 @@ export async function listSpaceSnapshot(data) {
       dark: isDarkHex(active.from),
       ink: spaceInk(active),
       muted: isDarkHex(active.from) ? PALETTE.darkMuted : PALETTE.muted,
+      grokOpen: active.grokOpen,
     },
     spaces: data.spaces,
     pins,
@@ -331,6 +332,13 @@ export async function updateSpaceColor(data, spaceId, color) {
   applyPickedColor(space, color);
   await saveSpaces(data);
   await applySpaceTheme(space);
+  return listSpaceSnapshot(data);
+}
+
+export async function setSpaceGrok(data, spaceId, open) {
+  const space = spaceById(data, spaceId);
+  space.grokOpen = Boolean(open);
+  await saveSpaces(data);
   return listSpaceSnapshot(data);
 }
 
