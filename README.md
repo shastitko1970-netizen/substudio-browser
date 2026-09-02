@@ -24,16 +24,34 @@ Auto-update: **Windows launcher** reads public GitHub Releases. Extension `updat
 
 ---
 
-## Установка (Windows)
+## Скачать и проверить (Windows)
 
-1. Скачайте **`SubStudioBrowser-Setup-0.1.3.exe`** из [Releases](https://github.com/shastitko1970-netizen/substudio-browser/releases/tag/v0.1.3).
-2. Откройте установщик — своё HTML-окно (свернуть / закрыть), без системного title bar. Welcome / runtime / progress / done. Не NSIS, не консоль.
-3. **Fetch Firefox ESR** (рекомендуем): официальный ESR в `%LOCALAPPDATA%\SubStudioBrowser`. Unsigned Grok sidecar держится. Setup.exe ESR не содержит — качает при установке.
-4. Или **Copy the Firefox I already have** — быстрее; на обычном Release сайдбар Grok может отвалиться.
+Прямая ссылка на установщик (после публикации тега `v0.1.3`):
+
+**[SubStudioBrowser-Setup-0.1.3.exe](https://github.com/shastitko1970-netizen/substudio-browser/releases/download/v0.1.3/SubStudioBrowser-Setup-0.1.3.exe)**
+
+Релиз целиком: [v0.1.3](https://github.com/shastitko1970-netizen/substudio-browser/releases/tag/v0.1.3) · SHA256 рядом, файл `SubStudioBrowser-Setup-0.1.3.exe.sha256`.
+
+Не качай zip, если хочешь GUI-установщик. Zip — payload для автообновления уже установленной копии.
+
+### Перед запуском
+
+1. Закрой SubStudio Browser, если он открыт.
+2. Закрой зависший Setup.exe / PowerShell от 0.1.2 (Диспетчер задач → снять задачу). Иначе снова словите lock на файле.
+3. SmartScreen на неподписанный exe — «Подробнее → Выполнить в любом случае». Это ожидаемо.
+
+### Чеклист 0.1.3
+
+1. Запусти `SubStudioBrowser-Setup-0.1.3.exe`.
+2. **Рамка:** одно окно, только наша шапка (название + свернуть + ×). Фиолетовой Windows-рамки и второго ряда кнопок быть не должно.
+3. Continue → **Fetch Firefox ESR** (рекомендуем) → Install SubStudio.
+4. Прогресс не должен упасть на `setup-progress.jsonl … used by another process`.
+5. It’s yours → **Launch SubStudio**.
+6. Справа sidecar: переключатель **Grok | Hermes**. Grok — как раньше. Hermes — «не запущен», пока не поднят `hermes gateway` / Desktop / proxy на этой машине.
 
 Повседневный Firefox в Program Files не патчится. Политики только в копии. Админ не нужен.
 
-Консольный путь по-прежнему: `setup\Install.cmd` или `setup\Install-SubStudioBrowser.ps1 -FetchEsr`.
+Консоль без GUI: `setup\Install.cmd` или `setup\Install-SubStudioBrowser.ps1 -FetchEsr`.
 
 Снять продукт (повседневный Firefox не удаляется):
 
