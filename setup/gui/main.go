@@ -18,7 +18,7 @@ const (
 )
 
 var (
-	productVersion = "0.1.1"
+	productVersion = "0.1.2"
 	ui             webview2.WebView
 	hwnd           windows.HWND
 	workDir        string
@@ -54,7 +54,7 @@ func main() {
 	defer ui.Destroy()
 
 	hwnd = windows.HWND(uintptr(ui.Window()))
-	makeFrameless(hwnd)
+	applyDesktopChrome(hwnd)
 	ui.SetSize(windowWidth, windowHeight, webview2.HintFixed)
 
 	mustBind("ssbGetState", nativeState)

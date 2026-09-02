@@ -130,40 +130,111 @@ func findInstaller(root string) (string, error) {
 	return found, nil
 }
 
+func findRepoRoot(script string) string {
+	cur := filepath.Dir(script)
+	for i := 0; i < 8; i++ {
+		if fileExists(filepath.Join(cur, "mozilla.cfg")) &&
+			fileExists(filepath.Join(cur, "distribution", "policies.json")) &&
+			fileExists(filepath.Join(cur, "extension", "manifest.json")) {
+			return cur
+		}
+		parent := filepath.Dir(cur)
+		if parent == cur {
+			break
+		}
+		cur = parent
+	}
+	return filepath.Dir(script)
+}
+
+func fileExists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
+}
+
+func appRoot() string {
+	return filepath.Join(os.Getenv("LOCALAPPDATA"), "SubStudioBrowser")
+}
+
+func setupLogPath() string {
+	return filepath.Join(appRoot(), "setup.log")
+}
+
+func appendSetupLog(path, text string) {
+	if strings.TrimSpace(text) == "" {
+		return
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return
+	}
+	file, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+	if err != nil {
+		return
+	}
+	_, _ = file.WriteString(text)
+	if !strings.HasSuffix(text, "\n") {
+		_, _ = file.WriteString("\n")
+	}
+	_ = file.Close()
+}
+
 func startInstall(root, mode string, onLine func(string)) error {
 	script, err := findInstaller(root)
 	if err != nil {
 		return err
 	}
-	logPath := filepath.Join(os.TempDir(), "ssb-setup-progress-"+productVersion+".jsonl")
+	dest := appRoot()
+	if err := os.MkdirAll(dest, 0o755); err != nil {
+		return err
+	}
+	logPath := filepath.Join(dest, "setup-progress.jsonl")
+	setupLog := setupLogPath()
+	consolePath := filepath.Join(dest, "setup-console.log")
 	_ = os.Remove(logPath)
+	_ = os.Remove(consolePath)
 
 	args := []string{
 		"-NoProfile",
 		"-ExecutionPolicy", "Bypass",
+		"-OutputFormat", "Text",
 		"-File", script,
 		"-GuiProgress",
 		"-ProgressLog", logPath,
+		"-SetupLog", setupLog,
 	}
 	if mode != "copy" {
 		args = append(args, "-FetchEsr")
 	}
 
+	appendSetupLog(setupLog, "=== SubStudio Browser "+productVersion+" "+time.Now().Format(time.RFC3339)+" ===\n")
+	appendSetupLog(setupLog, "cmd: powershell.exe "+strings.Join(args, " ")+"\n")
+	appendSetupLog(setupLog, "script: "+script+"\n")
+	appendSetupLog(setupLog, "overlay: "+root+"\n")
+
+	console, err := os.Create(consolePath)
+	if err != nil {
+		return err
+	}
+
 	cmd := exec.Command("powershell.exe", args...)
-	cmd.Dir = filepath.Dir(script)
+	cmd.Dir = findRepoRoot(script)
+	cmd.Stdout = console
+	cmd.Stderr = console
 	cmd.SysProcAttr = &windows.SysProcAttr{
 		HideWindow:    true,
 		CreationFlags: createNewProcessGroup | createNoWindow,
 	}
 	if err := cmd.Start(); err != nil {
+		_ = console.Close()
+		appendSetupLog(setupLog, "start failed: "+err.Error()+"\n")
 		return err
 	}
 
-	go watchInstall(cmd, logPath, onLine)
+	go watchInstall(cmd, logPath, setupLog, consolePath, console, onLine)
 	return nil
 }
 
-func watchInstall(cmd *exec.Cmd, logPath string, onLine func(string)) {
+func watchInstall(cmd *exec.Cmd, logPath, setupLog, consolePath string, console *os.File, onLine func(string)) {
 	var offset int64
 	done := make(chan error, 1)
 	go func() { done <- cmd.Wait() }()
@@ -183,25 +254,39 @@ func watchInstall(cmd *exec.Cmd, logPath string, onLine func(string)) {
 		}
 	}
 
+	readConsole := func() string {
+		if console != nil {
+			_ = console.Close()
+			console = nil
+		}
+		body, err := os.ReadFile(consolePath)
+		if err != nil {
+			return ""
+		}
+		appendSetupLog(setupLog, "--- powershell stdout+stderr ---\n"+string(body))
+		return string(body)
+	}
+
 	for {
 		select {
 		case err := <-done:
 			offset = drainProgress(logPath, offset, wrap)
+			output := readConsole()
 			if sawTerminal {
 				return
 			}
 			if err != nil {
 				wrap(mustJSON(map[string]interface{}{
 					"phase":  "error",
-					"detail": "Install failed: " + err.Error(),
+					"detail": formatInstallFailure(err, output, setupLog),
 					"status": "Failed",
 				}))
 				return
 			}
-			if _, statErr := os.Stat(filepath.Join(os.Getenv("LOCALAPPDATA"), "SubStudioBrowser", "VERSION")); statErr != nil {
+			if _, statErr := os.Stat(filepath.Join(appRoot(), "VERSION")); statErr != nil {
 				wrap(mustJSON(map[string]interface{}{
 					"phase":  "error",
-					"detail": "Install did not finish. Retry with Fetch Firefox ESR.",
+					"detail": formatInstallFailure(errors.New("install did not finish"), output, setupLog),
 					"status": "Failed",
 				}))
 			}
@@ -209,7 +294,7 @@ func watchInstall(cmd *exec.Cmd, logPath string, onLine func(string)) {
 		case <-timeout.C:
 			wrap(mustJSON(map[string]interface{}{
 				"phase":  "error",
-				"detail": "Install timed out.",
+				"detail": "Install timed out. Open %LOCALAPPDATA%\\SubStudioBrowser\\setup.log",
 				"status": "Failed",
 			}))
 			return
@@ -217,6 +302,58 @@ func watchInstall(cmd *exec.Cmd, logPath string, onLine func(string)) {
 			offset = drainProgress(logPath, offset, wrap)
 		}
 	}
+}
+
+func formatInstallFailure(waitErr error, console, setupLog string) string {
+	if useful := usefulPowerShell(console); useful != "" {
+		return useful
+	}
+	if body, err := os.ReadFile(setupLog); err == nil {
+		if useful := usefulPowerShell(string(body)); useful != "" {
+			return useful
+		}
+	}
+	if waitErr != nil && !isBareExitStatus(waitErr) {
+		return waitErr.Error()
+	}
+	return "PowerShell failed with no message. Open %LOCALAPPDATA%\\SubStudioBrowser\\setup.log"
+}
+
+func isBareExitStatus(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := strings.ToLower(err.Error())
+	return strings.Contains(msg, "exit status") || strings.Contains(msg, "exit code")
+}
+
+func usefulPowerShell(raw string) string {
+	lines := strings.Split(strings.ReplaceAll(raw, "\r\n", "\n"), "\n")
+	kept := make([]string, 0, len(lines))
+	for _, line := range lines {
+		trim := strings.TrimSpace(line)
+		if trim == "" {
+			continue
+		}
+		if strings.HasPrefix(trim, "##SSB##") || strings.HasPrefix(trim, "{") && strings.Contains(trim, `"phase"`) {
+			continue
+		}
+		if strings.HasPrefix(trim, "===") || strings.HasPrefix(trim, "cmd:") || strings.HasPrefix(trim, "script:") {
+			continue
+		}
+		kept = append(kept, trim)
+	}
+	if len(kept) == 0 {
+		return ""
+	}
+	if len(kept) > 24 {
+		kept = kept[len(kept)-24:]
+	}
+	text := strings.Join(kept, "\n")
+	if len(text) > 1600 {
+		text = text[len(text)-1600:]
+	}
+	return text
 }
 
 func drainProgress(path string, offset int64, onLine func(string)) int64 {
@@ -258,8 +395,8 @@ func openPath(path string) error {
 func launchBrowser(root string) error {
 	script := filepath.Join(filepath.Dir(mustFind(root, "Launch-SubStudioBrowser.ps1")), "Launch-SubStudioBrowser.ps1")
 	if _, err := os.Stat(script); err != nil {
-		exe := filepath.Join(os.Getenv("LOCALAPPDATA"), "SubStudioBrowser", "runtime", "firefox.exe")
-		profile := filepath.Join(os.Getenv("LOCALAPPDATA"), "SubStudioBrowser", "profile")
+		exe := filepath.Join(appRoot(), "runtime", "firefox.exe")
+		profile := filepath.Join(appRoot(), "profile")
 		cmd := exec.Command(exe, "-profile", profile, "-no-remote")
 		cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 		return cmd.Start()
