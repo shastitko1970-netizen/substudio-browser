@@ -31,6 +31,34 @@ html[data-theme="light"] .grok-dock {
   color: var(--muted);
 }
 
+.switch {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.switch button {
+  border: 0;
+  background: transparent;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.switch button.on {
+  background: var(--btn);
+  color: var(--btn-ink);
+}
+
+.empty {
+  margin: 24px 16px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
 .composer textarea {
   border-radius: 999px;
   min-height: 44px;

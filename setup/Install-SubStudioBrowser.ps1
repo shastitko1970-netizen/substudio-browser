@@ -1,7 +1,7 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
-  Install SubStudio Browser 0.1.1 into a PRIVATE Firefox copy.
+  Install SubStudio Browser 0.1.3 into a PRIVATE Firefox copy.
 
   Never writes policies/AutoConfig into Program Files. Daily Firefox stays clean.
   Uses -profile (absolute path), not -CreateProfile (which would touch shared profiles.ini).
@@ -15,13 +15,16 @@ param(
     [switch]$NoDesktopShortcut,
     [switch]$Uninstall,
     [switch]$GuiProgress,
-    [string]$ProgressLog
+    [string]$ProgressLog,
+    [string]$SetupLog
 )
 
 $ErrorActionPreference = "Stop"
-$ProductVersion = "0.1.1"
-$RepoRoot = Split-Path -Parent $PSScriptRoot
+$ProductVersion = "0.1.3"
 $AppRoot = Join-Path $env:LOCALAPPDATA "SubStudioBrowser"
+if (-not $SetupLog) {
+    $SetupLog = Join-Path $AppRoot "setup.log"
+}
 $Runtime = Join-Path $AppRoot "runtime"
 $ProfileDir = Join-Path $AppRoot "profile"
 $OverlayDir = Join-Path $AppRoot "overlay"
@@ -31,7 +34,49 @@ $StateFile = Join-Path $AppRoot "setup-state.json"
 $CompanionId = "substudio-companion@substudio.browser"
 $VersionFile = Join-Path $AppRoot "VERSION"
 
-function Write-Step([string]$Message) { Write-Host "==> $Message" -ForegroundColor Cyan }
+function Write-SsbLog([string]$Message) {
+    $line = "$(Get-Date -Format o) $Message"
+    Write-Host $line
+    $dir = Split-Path -Parent $SetupLog
+    if ($dir -and -not (Test-Path $dir)) {
+        New-Item -ItemType Directory -Force -Path $dir | Out-Null
+    }
+    Add-Content -LiteralPath $SetupLog -Value $line -Encoding UTF8
+}
+
+function Resolve-SsbRepoRoot {
+    $cursor = $PSScriptRoot
+    while ($cursor) {
+        $cfg = Join-Path $cursor "mozilla.cfg"
+        $dist = Join-Path $cursor "distribution\policies.json"
+        $ext = Join-Path $cursor "extension\manifest.json"
+        if ((Test-Path -LiteralPath $cfg) -and (Test-Path -LiteralPath $dist) -and (Test-Path -LiteralPath $ext)) {
+            return $cursor
+        }
+        $parent = Split-Path -Parent $cursor
+        if (-not $parent -or $parent -eq $cursor) { break }
+        $cursor = $parent
+    }
+    throw "overlay incomplete: mozilla.cfg / distribution / extension not found above $PSScriptRoot"
+}
+
+function Write-Step([string]$Message) { Write-SsbLog "==> $Message" }
+
+function Write-SsbProgressLine([string]$Path, [string]$Line) {
+    if (-not $Path) { return }
+    $dir = Split-Path -Parent $Path
+    if ($dir -and -not (Test-Path $dir)) {
+        New-Item -ItemType Directory -Force -Path $dir | Out-Null
+    }
+    $share = [System.IO.FileShare]::ReadWrite -bor [System.IO.FileShare]::Delete
+    $stream = [System.IO.File]::Open($Path, [System.IO.FileMode]::Append, [System.IO.FileAccess]::Write, $share)
+    try {
+        $bytes = [System.Text.Encoding]::UTF8.GetBytes(($Line.TrimEnd() + [Environment]::NewLine))
+        $stream.Write($bytes, 0, $bytes.Length)
+    } finally {
+        $stream.Dispose()
+    }
+}
 
 function Write-SsbProgress {
     param(
@@ -49,11 +94,7 @@ function Write-SsbProgress {
     } | ConvertTo-Json -Compress
     Write-Host "##SSB##$payload"
     if ($ProgressLog) {
-        $dir = Split-Path -Parent $ProgressLog
-        if ($dir -and -not (Test-Path $dir)) {
-            New-Item -ItemType Directory -Force -Path $dir | Out-Null
-        }
-        Add-Content -LiteralPath $ProgressLog -Value $payload -Encoding UTF8
+        Write-SsbProgressLine $ProgressLog $payload
     }
 }
 
@@ -68,11 +109,12 @@ function Write-SsbDone {
     } | ConvertTo-Json -Compress
     Write-Host "##SSB##$payload"
     if ($ProgressLog) {
-        Add-Content -LiteralPath $ProgressLog -Value $payload -Encoding UTF8
+        Write-SsbProgressLine $ProgressLog $payload
     }
 }
 
 function Write-SsbFail([string]$Message) {
+    Write-SsbLog "FAIL $Message"
     $payload = @{
         percent = 0
         status  = "Failed"
@@ -81,7 +123,7 @@ function Write-SsbFail([string]$Message) {
     } | ConvertTo-Json -Compress
     Write-Host "##SSB##$payload"
     if ($ProgressLog) {
-        Add-Content -LiteralPath $ProgressLog -Value $payload -Encoding UTF8
+        Write-SsbProgressLine $ProgressLog $payload
     }
 }
 
@@ -143,6 +185,7 @@ function Get-RemoteFile {
     $request.UserAgent = "SubStudioBrowser/$ProductVersion"
     $response = $request.GetResponse()
     try {
+        Write-SsbLog "GET $Url -> $($response.ResponseUri) ($($response.ContentLength) bytes)"
         $total = $response.ContentLength
         $input = $response.GetResponseStream()
         $output = [System.IO.File]::Create($Dest)
@@ -166,19 +209,110 @@ function Get-RemoteFile {
     }
 }
 
+function Assert-FullPayload([string]$Path) {
+    $item = Get-Item -LiteralPath $Path
+    if ($item.Length -lt 20MB) {
+        throw "Downloaded $($item.Length) bytes — this is the stub installer, not the full ESR payload."
+    }
+}
+
+function Find-SsbFirefoxExe([string]$Root) {
+    if (-not (Test-Path -LiteralPath $Root)) { return $null }
+    $direct = Join-Path $Root "firefox.exe"
+    if (Test-Path -LiteralPath $direct) { return $direct }
+    $core = Join-Path $Root "core\firefox.exe"
+    if (Test-Path -LiteralPath $core) { return $core }
+    $hit = Get-ChildItem -LiteralPath $Root -Filter firefox.exe -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($hit) { return $hit.FullName }
+    return $null
+}
+
+function Copy-SsbRuntimeTree([string]$ExePath) {
+    $src = Split-Path -Parent $ExePath
+    if (Test-Path -LiteralPath $Runtime) { Remove-Item -LiteralPath $Runtime -Recurse -Force }
+    New-Item -ItemType Directory -Force -Path $Runtime | Out-Null
+    Copy-Item -Path (Join-Path $src "*") -Destination $Runtime -Recurse -Force
+    $exe = Join-Path $Runtime "firefox.exe"
+    if (-not (Test-Path -LiteralPath $exe)) {
+        throw "firefox.exe missing after copy from $src"
+    }
+    return $exe
+}
+
+function Expand-SsbSfx([string]$Exe, [string]$Dest) {
+    if (Test-Path -LiteralPath $Dest) { Remove-Item -LiteralPath $Dest -Recurse -Force }
+    New-Item -ItemType Directory -Force -Path $Dest | Out-Null
+    $candidates = @(
+        "7z.exe",
+        "7za.exe",
+        (Join-Path $env:ProgramFiles "7-Zip\7z.exe")
+    )
+    if (${env:ProgramFiles(x86)}) {
+        $candidates += (Join-Path ${env:ProgramFiles(x86)} "7-Zip\7z.exe")
+    }
+    foreach ($bin in $candidates) {
+        $use = $null
+        if (Test-Path -LiteralPath $bin) {
+            $use = $bin
+        } else {
+            $cmd = Get-Command $bin -ErrorAction SilentlyContinue
+            if ($cmd) { $use = $cmd.Source }
+        }
+        if (-not $use) { continue }
+        Write-SsbLog "7z extract $use -> $Dest"
+        $proc = Start-Process -FilePath $use -ArgumentList @("x", "-y", "-o$Dest", $Exe) -Wait -PassThru -WindowStyle Hidden
+        Write-SsbLog "7z exit $($proc.ExitCode)"
+        $found = Find-SsbFirefoxExe $Dest
+        if ($found) { return $found }
+    }
+    return $null
+}
+
+function Install-EsrSilent([string]$Exe) {
+    if (Test-Path -LiteralPath $Runtime) { Remove-Item -LiteralPath $Runtime -Recurse -Force }
+    New-Item -ItemType Directory -Force -Path $Runtime | Out-Null
+    $silentArgs = @(
+        "/S",
+        "/InstallDirectoryPath=$Runtime",
+        "/DesktopShortcut=false",
+        "/StartMenuShortcut=false",
+        "/TaskbarShortcut=false",
+        "/MaintenanceService=false"
+    )
+    Write-SsbLog "silent install $Exe $($silentArgs -join ' ')"
+    $proc = Start-Process -FilePath $Exe -ArgumentList $silentArgs -Wait -PassThru -WindowStyle Hidden
+    Write-SsbLog "silent install exit $($proc.ExitCode)"
+    return (Find-SsbFirefoxExe $Runtime)
+}
+
 function Install-EsrRuntime {
     Write-SsbProgress 8 "Fetching Firefox ESR..." "Скачиваю официальный Firefox ESR (unsigned XPI работает на ESR)"
-    $tmp = Join-Path $env:TEMP "firefox-esr-setup.exe"
-    $url = "https://download.mozilla.org/?product=firefox-esr-latest-ssl&os=win64&lang=en-US"
-    Get-RemoteFile -Url $url -Dest $tmp -StartPct 10 -EndPct 55 -Status "Fetching Firefox ESR..." -Detail "Официальный ESR, не поверх повседневного Firefox"
-    Write-SsbProgress 58 "Extracting ESR..." "Распаковываю ESR в $Runtime"
-    if (Test-Path $Runtime) { Remove-Item $Runtime -Recurse -Force }
-    New-Item -ItemType Directory -Force -Path $Runtime | Out-Null
-    & $tmp /ExtractDir=$Runtime
-    if (-not (Test-Path (Join-Path $Runtime "firefox.exe"))) {
-        throw "ESR extract failed"
+    # Verified 2026-09-01: product=firefox-esr-latest-ssl&os=win64 follows redirects to the
+    # full ~70MB 7z SFX (not the stub). 7z x leaves core\firefox.exe. The matching .msi is
+    # only Binary.WrappedExe of the same SFX — msiexec /a does not produce firefox.exe.
+    $tmp = Join-Path $env:TEMP "ssb-esr-$ProductVersion"
+    New-Item -ItemType Directory -Force -Path $tmp | Out-Null
+    $exe = Join-Path $tmp "firefox-esr-setup.exe"
+    $stage = Join-Path $tmp "extract"
+    $exeUrl = "https://download.mozilla.org/?product=firefox-esr-latest-ssl&os=win64&lang=en-US"
+    Get-RemoteFile -Url $exeUrl -Dest $exe -StartPct 10 -EndPct 55 -Status "Fetching Firefox ESR..." -Detail "Full ESR win64 installer (not the stub)"
+    Assert-FullPayload $exe
+
+    Write-SsbProgress 58 "Extracting ESR..." "Распаковываю ESR в $Runtime (7z core\\firefox.exe, else silent InstallDirectoryPath)"
+    $found = Expand-SsbSfx $exe $stage
+    if (-not $found) {
+        $found = Install-EsrSilent $exe
     }
-    return [pscustomobject]@{ Exe = (Join-Path $Runtime "firefox.exe"); Root = $Runtime; Channel = "esr" }
+    if (-not $found) {
+        throw "Could not place firefox.exe under $Runtime. See $SetupLog"
+    }
+    Copy-SsbRuntimeTree $found | Out-Null
+    $runtimeExe = Join-Path $Runtime "firefox.exe"
+    if (-not (Test-Path -LiteralPath $runtimeExe)) {
+        throw "ESR extract finished but $runtimeExe is missing"
+    }
+    Write-SsbLog "runtime firefox.exe ok ($((Get-Item -LiteralPath $runtimeExe).Length) bytes)"
+    return [pscustomobject]@{ Exe = $runtimeExe; Root = $Runtime; Channel = "esr" }
 }
 
 function Pack-Xpi {
@@ -305,6 +439,8 @@ function Uninstall-Private {
 try {
     if ($Uninstall) { Uninstall-Private; return }
 
+    $script:RepoRoot = Resolve-SsbRepoRoot
+    Write-SsbLog "RepoRoot=$script:RepoRoot PSScriptRoot=$PSScriptRoot"
     $source = $null
     $install = $null
     Write-SsbProgress 4 "Starting..." "Готовлю частную папку $AppRoot"
@@ -354,6 +490,7 @@ try {
     Write-Host "FoxyProxy и Multi-Account Containers подтягиваются с AMO (подписаны)."
     Write-SsbDone $install.Channel
 } catch {
+    Write-SsbLog (($_ | Out-String).Trim())
     Write-SsbFail $_.Exception.Message
     throw
 }

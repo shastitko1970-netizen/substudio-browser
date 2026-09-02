@@ -74,6 +74,21 @@
     }
   }
 
+  function showFailActions(on) {
+    const actions = $("fail-actions");
+    const phase = $("install-phase");
+    if (actions) actions.hidden = !on;
+    if (phase) phase.hidden = on;
+  }
+
+  function closeWindow() {
+    if (typeof window.ssbClose === "function") {
+      window.ssbClose(false);
+      return;
+    }
+    window.close();
+  }
+
   function onProgress(payload) {
     if (!payload) return;
     if (payload.percent != null) {
@@ -87,6 +102,7 @@
       $("install-phase").textContent = "Failed";
       $("install-hint").textContent = payload.detail || "Install failed.";
       $("install-hint").classList.add("err");
+      showFailActions(true);
       installing = false;
       return;
     }
@@ -94,6 +110,7 @@
       finished = true;
       installing = false;
       $("install-phase").textContent = "Ready";
+      showFailActions(false);
       show("done");
     }
   }
@@ -117,6 +134,30 @@
     tick();
   }
 
+  async function beginInstall() {
+    if (installing) return;
+    installing = true;
+    finished = false;
+    $("install-hint").classList.remove("err");
+    $("install-phase").textContent = "Working";
+    showFailActions(false);
+    $("bar-fill").style.width = "8%";
+    $("install-status").textContent =
+      mode === "esr" ? "Fetching Firefox ESR..." : "Copying Firefox...";
+    $("install-hint").textContent =
+      "Это не системный браузер. Можно закрыть окно — докачаем в фоне.";
+    show("installing");
+    if (typeof window.ssbStartInstall === "function") {
+      try {
+        await window.ssbStartInstall(mode);
+      } catch (err) {
+        onProgress({ phase: "error", detail: String(err && err.message ? err.message : err) });
+      }
+      return;
+    }
+    demoInstall();
+  }
+
   $("btn-continue").addEventListener("click", () => show("runtime"));
   $("btn-back").addEventListener("click", () => show("welcome"));
 
@@ -128,25 +169,14 @@
     });
   });
 
-  $("btn-install").addEventListener("click", async () => {
-    if (installing) return;
-    installing = true;
-    $("install-hint").classList.remove("err");
-    $("install-phase").textContent = "Working";
-    $("bar-fill").style.width = "8%";
-    $("install-status").textContent =
-      mode === "esr" ? "Fetching Firefox ESR..." : "Copying Firefox...";
-    show("installing");
-    if (typeof window.ssbStartInstall === "function") {
-      try {
-        await window.ssbStartInstall(mode);
-      } catch (err) {
-        onProgress({ phase: "error", detail: String(err && err.message ? err.message : err) });
-      }
-      return;
-    }
-    demoInstall();
+  $("btn-install").addEventListener("click", () => {
+    beginInstall();
   });
+  $("btn-retry").addEventListener("click", () => {
+    beginInstall();
+  });
+  $("btn-fail-close").addEventListener("click", closeWindow);
+  $("btn-win-close").addEventListener("click", closeWindow);
 
   $("btn-folder").addEventListener("click", () => {
     if (typeof window.ssbOpenFolder === "function") window.ssbOpenFolder();
@@ -154,19 +184,23 @@
   $("btn-launch").addEventListener("click", () => {
     if (typeof window.ssbLaunch === "function") window.ssbLaunch();
   });
-  $("btn-close").addEventListener("click", () => {
-    if (typeof window.ssbClose === "function") {
-      window.ssbClose(installing && !finished);
-      return;
-    }
-    window.close();
-  });
   $("btn-min").addEventListener("click", () => {
     if (typeof window.ssbMinimize === "function") window.ssbMinimize();
   });
 
   $("btn-theme").addEventListener("click", toggleTheme);
 
+  document.addEventListener("keydown", (event) => {
+    if (event.altKey && event.key === "F4") {
+      event.preventDefault();
+      closeWindow();
+    }
+  });
+
+  document.querySelector(".caption").addEventListener("mousedown", (event) => {
+    if (event.target.closest("button")) return;
+    if (typeof window.ssbDrag === "function") window.ssbDrag();
+  });
   document.querySelector(".art").addEventListener("mousedown", () => {
     if (typeof window.ssbDrag === "function") window.ssbDrag();
   });

@@ -8,18 +8,14 @@
 </head>
 <body>
   <div class="stage">
-    <div class="os-pill nodrag" role="tablist" aria-label="Operating system">
-      <button class="on" type="button" data-os="windows">Windows</button>
-      <button type="button" data-os="macos" disabled title="Later">macOS</button>
-      <button type="button" data-os="linux" disabled title="Later">Linux</button>
-    </div>
-
     <section class="window" aria-label="SubStudio Browser installer">
-      <div class="traffic nodrag">
-        <b class="r" id="btn-close" title="Close"></b>
-        <b class="y" id="btn-min" title="Minimize"></b>
-        <b class="g" title=""></b>
-      </div>
+      <header class="caption nodrag">
+        <span class="caption-title">SubStudio Browser</span>
+        <div class="caption-btns">
+          <button type="button" id="btn-min" title="Minimize" aria-label="Minimize">–</button>
+          <button type="button" id="btn-win-close" title="Close" aria-label="Close">×</button>
+        </div>
+      </header>
       <button class="theme-toggle nodrag" id="btn-theme" type="button" title="Theme" aria-label="Theme">
         <svg class="moon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
           <path d="M12.6 10.2A5.4 5.4 0 0 1 6.1 3.4 5.5 5.5 0 1 0 12.6 10.2z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
@@ -30,12 +26,17 @@
         </svg>
       </button>
       <aside class="art drag">
+        <div class="traffic" aria-hidden="true">
+          <b class="r"></b>
+          <b class="y"></b>
+          <b class="g"></b>
+        </div>
         <i class="orb orb-a"></i>
         <i class="orb orb-b"></i>
         <i class="orb orb-c"></i>
         <div class="brand">
           <h2>SubStudio Browser</h2>
-          <p><span id="ver">0.1.1</span> · a browser you want to open</p>
+          <p><span id="ver">0.1.3</span> · a browser you want to open</p>
         </div>
       </aside>
 
@@ -119,6 +120,10 @@
           <div class="footer">
             <div class="meta">~90 MB · private profile</div>
             <div class="working" id="install-phase">Working</div>
+            <div class="fail-actions" id="fail-actions" hidden>
+              <button class="link nodrag" id="btn-fail-close" type="button">Close</button>
+              <button class="primary nodrag" id="btn-retry" type="button">Retry</button>
+            </div>
           </div>
         </section>
 
@@ -129,7 +134,7 @@
             </svg>
           </div>
           <h1>It’s yours.</h1>
-          <p class="lede" id="done-copy">SubStudio Browser 0.1.1 готов. Обновления прилетят с GitHub Releases, не из магазина Mozilla.</p>
+          <p class="lede" id="done-copy">SubStudio Browser 0.1.3 готов. Обновления прилетят с GitHub Releases, не из магазина Mozilla.</p>
           <ul class="tips">
             <li>
               <i>⌘K</i>

@@ -47,6 +47,19 @@
       </section>
 
       <section class="card">
+        <h2>Hermes</h2>
+        <p class="muted">Не встраиваем пустого агента; подключаемся к уже запущенному.</p>
+        <p id="hermes-status" class="muted"></p>
+        <label class="field">Base URL (пусто = auto)
+          <input id="hermes-url" type="text" placeholder="http://127.0.0.1:8642" />
+        </label>
+        <label class="field">API_SERVER_KEY
+          <input id="hermes-key" type="password" autocomplete="off" />
+        </label>
+        <button id="save-hermes" type="button">Сохранить</button>
+      </section>
+
+      <section class="card">
         <h2>Шлюз SubStudio</h2>
         <div class="row">
           <label class="field">Хост<input id="host" /></label>

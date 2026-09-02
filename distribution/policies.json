@@ -1,6 +1,6 @@
 {
   "policies": {
-    "policies_Comment": "SubStudio Browser 0.1.1. Applied only to the copied runtime under %LOCALAPPDATA%\\SubStudioBrowser\\runtime — never to Program Files. Schema: firefox-admin-docs / policy-templates.",
+    "policies_Comment": "SubStudio Browser 0.1.3. Applied only to the copied runtime under %LOCALAPPDATA%\\SubStudioBrowser\\runtime — never to Program Files. Schema: firefox-admin-docs / policy-templates.",
     "BlockAboutConfig_Comment": "Intentionally omitted.",
     "DisableTelemetry_Comment": "Intentionally omitted. Stock telemetry only.",
     "Proxy_Comment": "Intentionally omitted. No SOCKS secrets in policy.",

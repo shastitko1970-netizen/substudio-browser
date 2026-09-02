@@ -31,7 +31,17 @@ jobs:
         run: |
           TAG="${GITHUB_REF_NAME}"
           NOTES="$(cat <<'EOF'
-          Overlay + companion + Windows Setup.exe. ESR is fetched at install time (Setup.exe stays small). Launcher is the primary updater. Extension update_url needs a signed XPI on Firefox Release.
+          ## Windows
+
+          Download **SubStudioBrowser-Setup-*.exe** (not the zip). Unsigned: SmartScreen → More info → Run anyway.
+
+          - Frameless Setup.exe — one caption, our min/close only
+          - Progress log in %TEMP% (no lock on setup-progress.jsonl in AppData)
+          - Sidecar: Grok (official xAI) **or** Hermes (connects to a running agent on :8642 / :8645)
+
+          Fetch Firefox ESR at install time. Daily Firefox in Program Files is never patched.
+
+          Zip is the in-app updater payload. Extension update_url needs a signed XPI on Firefox Release.
           EOF
           )"
           ASSETS=(

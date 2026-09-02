@@ -18,27 +18,28 @@ var (
 	procReleaseCapture    = modUser32.NewProc("ReleaseCapture")
 	procSendMessageW      = modUser32.NewProc("SendMessageW")
 	procShowWindow        = modUser32.NewProc("ShowWindow")
+	procDestroyWindow     = modUser32.NewProc("DestroyWindow")
 	procDwmSetAttr        = modDwm.NewProc("DwmSetWindowAttribute")
 )
 
 const (
-	gwlStyle                      = -16
-	gwlExStyle                    = -20
-	wsCaption                     = 0x00C00000
-	wsThickFrame                  = 0x00040000
-	wsMinimizeBox                 = 0x00020000
-	wsMaximizeBox                 = 0x00010000
-	wsSysMenu                     = 0x00080000
-	wsPopup                       = 0x80000000
-	wsVisible                     = 0x10000000
-	wsExAppWindow                 = 0x00040000
-	swpNoMove                     = 0x0002
-	swpNoZOrder                   = 0x0004
-	swpFrameChanged               = 0x0020
-	wmNCLButtonDown               = 0x00A1
-	htCaption                     = 2
-	dwmwaWindowCornerPreference   = 33
-	dwmwcpRound                   = 2
+	gwlStyle                    = -16
+	gwlExStyle                  = -20
+	wsCaption                   = 0x00C00000
+	wsThickFrame                = 0x00040000
+	wsMinimizeBox               = 0x00020000
+	wsMaximizeBox               = 0x00010000
+	wsSysMenu                   = 0x00080000
+	wsPopup                     = 0x80000000
+	wsVisible                   = 0x10000000
+	wsExAppWindow               = 0x00040000
+	swpNoMove                   = 0x0002
+	swpNoZOrder                 = 0x0004
+	swpFrameChanged             = 0x0020
+	wmNCLButtonDown             = 0x00A1
+	htCaption                   = 2
+	dwmwaWindowCornerPreference = 33
+	dwmwcpRound                 = 2
 )
 
 func nIndex(v int32) uintptr {
@@ -71,6 +72,13 @@ func makeFrameless(hwnd windows.HWND) {
 		0, 0, 0, 0,
 		swpNoMove|swpNoZOrder|swpFrameChanged,
 	)
+}
+
+func destroyWindow(hwnd windows.HWND) {
+	if hwnd == 0 {
+		return
+	}
+	_, _, _ = procDestroyWindow.Call(uintptr(hwnd))
 }
 
 func dragWindow(hwnd windows.HWND) {
