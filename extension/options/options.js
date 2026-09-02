@@ -14,6 +14,14 @@ async function refresh() {
   $("host").value = state.settings.substudioHost;
   $("port").value = state.settings.substudioPort;
   $("proxy-enabled").checked = state.settings.proxyEnabled;
+  $("hermes-url").value = state.settings.hermesBaseUrl || "";
+  if (!$("hermes-key").value) {
+    $("hermes-key").placeholder = state.settings.hermesApiKey ? "••••" : "";
+  }
+  const hermes = await send("probeHermes");
+  $("hermes-status").textContent = hermes.ok
+    ? `Найден ${hermes.kind} · ${hermes.origin}`
+    : "Hermes не запущен. Открой Hermes Desktop или hermes gateway / hermes proxy.";
   const session = state.session || {};
   $("session").textContent =
     session.source === "none"
@@ -63,6 +71,14 @@ $("save-settings").onclick = async () => {
     substudioPort: $("port").value,
     proxyEnabled: $("proxy-enabled").checked,
   });
+  refresh();
+};
+
+$("save-hermes").onclick = async () => {
+  const payload = { hermesBaseUrl: $("hermes-url").value };
+  if ($("hermes-key").value) payload.hermesApiKey = $("hermes-key").value;
+  await send("saveSettings", payload);
+  $("hermes-key").value = "";
   refresh();
 };
 

@@ -1,7 +1,7 @@
 ﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
-  Install SubStudio Browser 0.1.2 into a PRIVATE Firefox copy.
+  Install SubStudio Browser 0.1.3 into a PRIVATE Firefox copy.
 
   Never writes policies/AutoConfig into Program Files. Daily Firefox stays clean.
   Uses -profile (absolute path), not -CreateProfile (which would touch shared profiles.ini).
@@ -20,7 +20,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$ProductVersion = "0.1.2"
+$ProductVersion = "0.1.3"
 $AppRoot = Join-Path $env:LOCALAPPDATA "SubStudioBrowser"
 if (-not $SetupLog) {
     $SetupLog = Join-Path $AppRoot "setup.log"
@@ -62,6 +62,22 @@ function Resolve-SsbRepoRoot {
 
 function Write-Step([string]$Message) { Write-SsbLog "==> $Message" }
 
+function Write-SsbProgressLine([string]$Path, [string]$Line) {
+    if (-not $Path) { return }
+    $dir = Split-Path -Parent $Path
+    if ($dir -and -not (Test-Path $dir)) {
+        New-Item -ItemType Directory -Force -Path $dir | Out-Null
+    }
+    $share = [System.IO.FileShare]::ReadWrite -bor [System.IO.FileShare]::Delete
+    $stream = [System.IO.File]::Open($Path, [System.IO.FileMode]::Append, [System.IO.FileAccess]::Write, $share)
+    try {
+        $bytes = [System.Text.Encoding]::UTF8.GetBytes(($Line.TrimEnd() + [Environment]::NewLine))
+        $stream.Write($bytes, 0, $bytes.Length)
+    } finally {
+        $stream.Dispose()
+    }
+}
+
 function Write-SsbProgress {
     param(
         [int]$Percent,
@@ -78,11 +94,7 @@ function Write-SsbProgress {
     } | ConvertTo-Json -Compress
     Write-Host "##SSB##$payload"
     if ($ProgressLog) {
-        $dir = Split-Path -Parent $ProgressLog
-        if ($dir -and -not (Test-Path $dir)) {
-            New-Item -ItemType Directory -Force -Path $dir | Out-Null
-        }
-        Add-Content -LiteralPath $ProgressLog -Value $payload -Encoding UTF8
+        Write-SsbProgressLine $ProgressLog $payload
     }
 }
 
@@ -97,7 +109,7 @@ function Write-SsbDone {
     } | ConvertTo-Json -Compress
     Write-Host "##SSB##$payload"
     if ($ProgressLog) {
-        Add-Content -LiteralPath $ProgressLog -Value $payload -Encoding UTF8
+        Write-SsbProgressLine $ProgressLog $payload
     }
 }
 
@@ -111,7 +123,7 @@ function Write-SsbFail([string]$Message) {
     } | ConvertTo-Json -Compress
     Write-Host "##SSB##$payload"
     if ($ProgressLog) {
-        Add-Content -LiteralPath $ProgressLog -Value $payload -Encoding UTF8
+        Write-SsbProgressLine $ProgressLog $payload
     }
 }
 

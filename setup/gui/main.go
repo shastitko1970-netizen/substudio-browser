@@ -18,7 +18,7 @@ const (
 )
 
 var (
-	productVersion = "0.1.2"
+	productVersion = "0.1.3"
 	ui             webview2.WebView
 	hwnd           windows.HWND
 	workDir        string
@@ -54,7 +54,7 @@ func main() {
 	defer ui.Destroy()
 
 	hwnd = windows.HWND(uintptr(ui.Window()))
-	applyDesktopChrome(hwnd)
+	makeFrameless(hwnd)
 	ui.SetSize(windowWidth, windowHeight, webview2.HintFixed)
 
 	mustBind("ssbGetState", nativeState)
@@ -90,6 +90,7 @@ func nativeState() map[string]string {
 }
 
 func nativeStartInstall(mode string) error {
+	stopInstall()
 	installing = true
 	return startInstall(workDir, mode, func(raw string) {
 		script := "if(window.ssbOnProgress)window.ssbOnProgress(" + raw + ")"
@@ -110,9 +111,12 @@ func nativeLaunch() error {
 
 func nativeClose(background bool) {
 	_ = background
+	stopInstall()
 	if ui != nil {
 		ui.Terminate()
 	}
+	destroyWindow(hwnd)
+	hwnd = 0
 }
 
 func nativeMinimize() {

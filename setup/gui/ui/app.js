@@ -197,6 +197,10 @@
     }
   });
 
+  document.querySelector(".caption").addEventListener("mousedown", (event) => {
+    if (event.target.closest("button")) return;
+    if (typeof window.ssbDrag === "function") window.ssbDrag();
+  });
   document.querySelector(".art").addEventListener("mousedown", () => {
     if (typeof window.ssbDrag === "function") window.ssbDrag();
   });

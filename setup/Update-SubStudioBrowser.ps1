@@ -3,7 +3,7 @@
 param([switch]$Force)
 
 $ErrorActionPreference = "Stop"
-$Product = "0.1.2"
+$Product = "0.1.3"
 $Repo = "shastitko1970-netizen/substudio-browser"
 $AppRoot = Join-Path $env:LOCALAPPDATA "SubStudioBrowser"
 $Current = $Product

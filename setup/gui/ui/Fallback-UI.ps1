@@ -2,7 +2,7 @@
 # WPF fallback when WebView2 is not available. Same four screens, same installer.
 param(
     [string]$WorkDir,
-    [string]$Version = "0.1.2"
+    [string]$Version = "0.1.3"
 )
 
 $ErrorActionPreference = "Stop"
@@ -166,8 +166,23 @@ function Show-Screen([string]$Name) {
     }
 }
 
+$script:installProc = $null
+$script:installTimer = $null
+
+function Stop-SsbInstall {
+    if ($script:installTimer) {
+        $script:installTimer.Stop()
+        $script:installTimer = $null
+    }
+    if ($script:installProc -and -not $script:installProc.HasExited) {
+        Start-Process -FilePath "taskkill.exe" -ArgumentList @("/T", "/F", "/PID", "$($script:installProc.Id)") -WindowStyle Hidden -Wait
+    }
+    $script:installProc = $null
+    $script:busy = $false
+}
+
 function Start-SsbInstall {
-    if ($script:busy) { return }
+    Stop-SsbInstall
     $script:busy = $true
     $hintText.Foreground = [Windows.Media.Brushes]::Gray
     $hintText.Text = "Это не системный браузер. Можно закрыть окно — докачаем в фоне."
@@ -175,13 +190,15 @@ function Start-SsbInstall {
     $closeBtn.Visibility = [Windows.Visibility]::Collapsed
     Show-Screen "installing"
     $setup = Find-Installer $WorkDir
-    $log = Join-Path $dest "setup-progress.jsonl"
+    $log = Join-Path $env:TEMP "ssb-setup-progress-$Version.jsonl"
     $setupLog = Join-Path $dest "setup.log"
     if (Test-Path $log) { Remove-Item $log -Force }
     $arg = @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $setup, "-GuiProgress", "-ProgressLog", $log, "-SetupLog", $setupLog)
     if ($script:mode -ne "copy") { $arg += "-FetchEsr" }
     $proc = Start-Process -FilePath powershell.exe -ArgumentList $arg -WindowStyle Hidden -PassThru
+    $script:installProc = $proc
     $timer = New-Object Windows.Threading.DispatcherTimer
+    $script:installTimer = $timer
     $timer.Interval = [TimeSpan]::FromMilliseconds(250)
     $timer.Add_Tick({
         if (Test-Path $log) {

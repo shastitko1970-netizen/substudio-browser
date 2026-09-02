@@ -10,8 +10,12 @@
     <div class="col grok-dock">
       <header class="top grok-top">
         <div class="grok-brand">
-          <span class="brand">Grok</span>
-          <span class="subline">Official xAI · this Space</span>
+          <span class="brand" id="brand">Grok</span>
+          <span class="subline" id="subline">Official xAI · this Space</span>
+        </div>
+        <div class="switch" id="assistant-switch" role="tablist" aria-label="Assistant">
+          <button id="pick-grok" type="button" class="on">Grok</button>
+          <button id="pick-hermes" type="button">Hermes</button>
         </div>
         <span class="chip"><span id="dot" class="dot"></span><span id="source">…</span></span>
         <span class="grow"></span>

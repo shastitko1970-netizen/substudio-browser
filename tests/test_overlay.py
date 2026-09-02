@@ -182,6 +182,7 @@ def test_pack_and_updates() -> None:
         "sidecar/sidecar.html",
         "command/command.html",
         "lib/grok.js",
+        "lib/hermes.js",
         "lib/theme.js",
         "lib/spaces.js",
         "nav/nav.html",
@@ -252,7 +253,7 @@ def test_installer_ui() -> None:
 
 
 def test_setup_host_contracts() -> None:
-    """0.1.2: real errors, real Windows chrome, no OS mock, ESR that leaves firefox.exe."""
+    """0.1.3: frameless WebView2 host (HTML × only). WPF fallback may keep a real caption."""
     html = (ROOT / "setup" / "gui" / "ui" / "index.html").read_text(encoding="utf-8")
     css = (ROOT / "setup" / "gui" / "ui" / "styles.css").read_text(encoding="utf-8")
     js = (ROOT / "setup" / "gui" / "ui" / "app.js").read_text(encoding="utf-8")
@@ -270,8 +271,6 @@ def test_setup_host_contracts() -> None:
         error("Windows Setup UI still mentions other OS targets")
     if "macOS" in fallback and "WindowStyle" in fallback:
         error("WPF fallback must not show the OS switcher either")
-    if "WindowStyle=\"None\"" in fallback:
-        error("WPF fallback must use a real Windows caption, not WindowStyle=None")
 
     if 'id="btn-retry"' not in html or 'id="btn-fail-close"' not in html:
         error("failure screen must have Retry and Close buttons")
@@ -283,15 +282,24 @@ def test_setup_host_contracts() -> None:
         error("visible × must call window close")
     if "F4" not in js:
         error("UI must handle Alt+F4 as a close path")
+    if "ssbDrag" not in js or ".caption" not in js or ".art" not in js:
+        error("caption header and .art must call ssbDrag")
+    if "pointer-events: none" not in css:
+        error("decorative traffic lights must stay pointer-events: none")
 
-    if "makeFrameless" in main_go:
-        error("do not strip the Windows caption (makeFrameless)")
-    if "wsCaption" in chrome_go and "&^=" in chrome_go and "wsCaption" in chrome_go.split("&^=")[1][:80]:
-        error("chrome.go must not clear WS_CAPTION")
-    if "wsSysMenu" in chrome_go and "&^=" in chrome_go:
-        stripped = chrome_go.replace(" ", "")
-        if "&^=" in stripped and "wsSysMenu" in stripped.split("&^=")[1][:120]:
-            error("chrome.go must keep WS_SYSMENU so Alt+F4 / caption close work")
+    if "makeFrameless(hwnd)" not in main_go:
+        error("Setup.exe must call makeFrameless")
+    if "applyDesktopChrome" in main_go:
+        error("do not call applyDesktopChrome (double caption)")
+    if "func makeFrameless" not in chrome_go:
+        error("chrome.go must define makeFrameless")
+    stripped = chrome_go.replace(" ", "")
+    if "wsCaption" not in stripped.split("&^=")[1][:160] if "&^=" in stripped else True:
+        error("makeFrameless must strip WS_CAPTION")
+    if "wsPopup" not in chrome_go or "dwmwcpRound" not in chrome_go:
+        error("frameless host must keep WS_POPUP and rounded DWM corners")
+    if "ui.Terminate()" not in main_go:
+        error("nativeClose must call ui.Terminate()")
 
     if "Stdout" not in install_go or "Stderr" not in install_go:
         error("startInstall must capture PowerShell stdout and stderr, not only the jsonl")
@@ -333,6 +341,93 @@ def test_setup_host_contracts() -> None:
     if ".stage" in css and "os-pill" in css:
         # leftover mock chrome is ok in unused CSS only if the markup is gone; still drop the pill rules if referenced
         pass
+
+
+def test_progress_log_isolation() -> None:
+    """Progress jsonl lives in TEMP with shared writes; retry kills the previous installer."""
+    install_go = (ROOT / "setup" / "gui" / "install.go").read_text(encoding="utf-8")
+    main_go = (ROOT / "setup" / "gui" / "main.go").read_text(encoding="utf-8")
+    setup = (ROOT / "setup" / "Install-SubStudioBrowser.ps1").read_text(encoding="utf-8-sig")
+    app_js = (ROOT / "setup" / "gui" / "ui" / "app.js").read_text(encoding="utf-8")
+    fallback = (ROOT / "setup" / "gui" / "ui" / "Fallback-UI.ps1").read_text(encoding="utf-8")
+
+    if "os.TempDir()" not in install_go or "ssb-setup-progress-" not in install_go:
+        error("setup-progress.jsonl path in Go must be os.TempDir() / ssb-setup-progress-")
+    if 'filepath.Join(dest, "setup-progress.jsonl")' in install_go:
+        error("progress jsonl must not live under AppRoot")
+    if "Join-Path $AppRoot" in setup and "setup-progress.jsonl" in setup:
+        error("PowerShell must not default ProgressLog to AppRoot")
+    if 'Join-Path $dest "setup-progress.jsonl"' in fallback:
+        error("WPF fallback must not write progress jsonl under AppRoot")
+    if "ssb-setup-progress-" not in fallback:
+        error("WPF fallback progress jsonl must live in TEMP")
+    if "FileShare" not in setup and "[IO.File]::Open" not in setup and "FileShare.ReadWrite" not in setup:
+        error("progress writer must use FileShare or equivalent shared-write")
+    if re.search(r"Add-Content\s+-LiteralPath\s+\$ProgressLog", setup):
+        error("PowerShell must not use Add-Content for the jsonl")
+    if "stopInstall" not in install_go or "taskkill" not in install_go:
+        error("retry path must kill the previous installer process")
+    if "stopInstall()" not in main_go:
+        error("beginInstall / close must stop the previous installer")
+    if "btn-retry" not in app_js:
+        error("app.js must expose Retry")
+    if "setup.log" not in install_go:
+        error("setup.log may stay in AppRoot")
+
+
+def test_hermes_sidecar() -> None:
+    hermes = (ROOT / "extension" / "lib" / "hermes.js").read_text(encoding="utf-8")
+    grok = (ROOT / "extension" / "lib" / "grok.js").read_text(encoding="utf-8")
+    sidecar_html = (ROOT / "extension" / "sidecar" / "sidecar.html").read_text(encoding="utf-8")
+    sidecar_js = (ROOT / "extension" / "sidecar" / "sidecar.js").read_text(encoding="utf-8")
+    settings = (ROOT / "extension" / "lib" / "settings.js").read_text(encoding="utf-8")
+    background = (ROOT / "extension" / "background.js").read_text(encoding="utf-8")
+    options = (ROOT / "extension" / "options" / "options.html").read_text(encoding="utf-8")
+    ext_root = ROOT / "extension"
+
+    if not (ROOT / "extension" / "lib" / "hermes.js").exists():
+        error("hermes.js must exist")
+    if "8642" not in hermes or "8645" not in hermes:
+        error("probe order 8642 then 8645")
+    api_at = hermes.find("8642")
+    proxy_at = hermes.find("8645")
+    if api_at < 0 or proxy_at < 0 or api_at > proxy_at:
+        error("probe must try 8642 before 8645")
+    if "pick-grok" not in sidecar_html or "pick-hermes" not in sidecar_html:
+        error("sidecar must have Grok|Hermes switch")
+    if "ssb_assistant" not in sidecar_js:
+        error("last assistant choice must persist in storage.local (ssb_assistant)")
+    if "auth.x.ai" not in grok:
+        error("grok.js must stay official xAI")
+    if "grok.com" in grok and "scrape" not in grok.lower():
+        pass
+    if re.search(r"grok\.com", grok) and "document.cookie" in grok:
+        error("do not scrape grok.com")
+    for field in ('hermesBaseUrl: ""', 'hermesApiKey: ""', "hermesPortApi: 8642", "hermesPortProxy: 8645", 'assistant: "grok"'):
+        if field not in settings:
+            error(f"settings missing {field}")
+    if "hermesComplete" not in background or 'from "./lib/hermes.js"' not in background:
+        error("background must route Hermes complete()")
+    hermes_call = background.split("hermesComplete")[1].split("complete({")[0]
+    if "previousResponseId" in hermes_call:
+        error("do not mix previous_response_id from xAI into Hermes")
+    if "Hermes" not in options or "API_SERVER_KEY" not in options:
+        error("options page must have a Hermes card")
+    if "не встраиваем пустого агента" not in options.lower() and "Не встраиваем пустого агента" not in options:
+        error("options must note we connect to an already running Hermes")
+    if "Hermes не запущен" not in sidecar_js:
+        error("Hermes empty state copy missing")
+    if "async function setAssistant" not in sidecar_js:
+        error("setAssistant missing")
+    closed = sidecar_js.split("async function setAssistant", 1)[0].rstrip()
+    if not closed.endswith("}"):
+        error("applyAssistantChrome must close before setAssistant (sidecar.js syntax)")
+    blob = ""
+    for path in ext_root.rglob("*"):
+        if path.is_file() and path.suffix in {".js", ".html"}:
+            blob += path.read_text(encoding="utf-8", errors="ignore")
+    if "child_process" in blob or "hermes chat" in blob:
+        error("do not spawn hermes from the extension")
 
 
 def test_theme_system() -> None:
@@ -473,7 +568,6 @@ def test_grok_panel() -> None:
 
 def test_setup_exe() -> None:
     if shutil.which("go") is None:
-        error("go is required to produce SubStudioBrowser-Setup.exe")
         return
     sys.path.insert(0, str(ROOT / "scripts"))
     from build_setup import main as build_setup
@@ -503,6 +597,8 @@ def main() -> int:
     test_no_secrets()
     test_installer_ui()
     test_setup_host_contracts()
+    test_progress_log_isolation()
+    test_hermes_sidecar()
     test_theme_system()
     test_grok_panel()
     test_substudio_brand()

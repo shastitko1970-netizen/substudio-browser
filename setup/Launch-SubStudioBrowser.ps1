@@ -22,7 +22,7 @@ if ($CheckUpdate) {
     try {
         $rel = Invoke-RestMethod -Uri "https://api.github.com/repos/$Repo/releases/latest" -Headers @{ Accept = "application/vnd.github+json" }
         $latest = $rel.tag_name.TrimStart("v")
-        $current = "0.1.2"
+        $current = "0.1.3"
         if (Test-Path (Join-Path $AppRoot "VERSION")) {
             $current = (Get-Content (Join-Path $AppRoot "VERSION") -Raw).Trim()
         }

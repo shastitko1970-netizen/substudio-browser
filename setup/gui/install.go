@@ -14,10 +14,17 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"golang.org/x/sys/windows"
+)
+
+var (
+	installMu  sync.Mutex
+	installCmd *exec.Cmd
 )
 
 //go:embed all:ui
@@ -160,6 +167,23 @@ func setupLogPath() string {
 	return filepath.Join(appRoot(), "setup.log")
 }
 
+func progressLogPath() string {
+	return filepath.Join(os.TempDir(), "ssb-setup-progress-"+productVersion+".jsonl")
+}
+
+func stopInstall() {
+	installMu.Lock()
+	cmd := installCmd
+	installCmd = nil
+	installMu.Unlock()
+	if cmd == nil || cmd.Process == nil {
+		return
+	}
+	pid := cmd.Process.Pid
+	_ = exec.Command("taskkill", "/T", "/F", "/PID", strconv.Itoa(pid)).Run()
+	_ = cmd.Process.Kill()
+}
+
 func appendSetupLog(path, text string) {
 	if strings.TrimSpace(text) == "" {
 		return
@@ -179,6 +203,7 @@ func appendSetupLog(path, text string) {
 }
 
 func startInstall(root, mode string, onLine func(string)) error {
+	stopInstall()
 	script, err := findInstaller(root)
 	if err != nil {
 		return err
@@ -187,7 +212,7 @@ func startInstall(root, mode string, onLine func(string)) error {
 	if err := os.MkdirAll(dest, 0o755); err != nil {
 		return err
 	}
-	logPath := filepath.Join(dest, "setup-progress.jsonl")
+	logPath := progressLogPath()
 	setupLog := setupLogPath()
 	consolePath := filepath.Join(dest, "setup-console.log")
 	_ = os.Remove(logPath)
@@ -229,6 +254,9 @@ func startInstall(root, mode string, onLine func(string)) error {
 		appendSetupLog(setupLog, "start failed: "+err.Error()+"\n")
 		return err
 	}
+	installMu.Lock()
+	installCmd = cmd
+	installMu.Unlock()
 
 	go watchInstall(cmd, logPath, setupLog, consolePath, console, onLine)
 	return nil
@@ -243,6 +271,14 @@ func watchInstall(cmd *exec.Cmd, logPath, setupLog, consolePath string, console 
 	defer ticker.Stop()
 	timeout := time.NewTimer(45 * time.Minute)
 	defer timeout.Stop()
+
+	defer func() {
+		installMu.Lock()
+		if installCmd == cmd {
+			installCmd = nil
+		}
+		installMu.Unlock()
+	}()
 
 	sawTerminal := false
 	wrap := func(raw string) {
@@ -267,9 +303,19 @@ func watchInstall(cmd *exec.Cmd, logPath, setupLog, consolePath string, console 
 		return string(body)
 	}
 
+	superseded := func() bool {
+		installMu.Lock()
+		defer installMu.Unlock()
+		return installCmd != cmd
+	}
+
 	for {
 		select {
 		case err := <-done:
+			if superseded() {
+				_ = readConsole()
+				return
+			}
 			offset = drainProgress(logPath, offset, wrap)
 			output := readConsole()
 			if sawTerminal {
@@ -292,6 +338,9 @@ func watchInstall(cmd *exec.Cmd, logPath, setupLog, consolePath string, console 
 			}
 			return
 		case <-timeout.C:
+			if superseded() {
+				return
+			}
 			wrap(mustJSON(map[string]interface{}{
 				"phase":  "error",
 				"detail": "Install timed out. Open %LOCALAPPDATA%\\SubStudioBrowser\\setup.log",
@@ -299,6 +348,9 @@ func watchInstall(cmd *exec.Cmd, logPath, setupLog, consolePath string, console 
 			}))
 			return
 		case <-ticker.C:
+			if superseded() {
+				return
+			}
 			offset = drainProgress(logPath, offset, wrap)
 		}
 	}

@@ -1,6 +1,6 @@
-# SubStudio Browser 0.1.2
+# SubStudio Browser 0.1.3
 
-Личный браузер в духе Arc / Dia / Comet на **stock Firefox**, без форка Gecko. Левая колонка — companion WebExtension (как Sidebery): живые вкладки, 3×3 pins, Spaces Work/Home. Нативный tab strip скрыт userChrome. Ассистент — **Grok по официальному xAI API** справа. Прокси — SOCKS5 с логином в движке Firefox (у Chrome этого нет).
+Личный браузер в духе Arc / Dia / Comet на **stock Firefox**, без форка Gecko. Левая колонка — companion WebExtension (как Sidebery): живые вкладки, 3×3 pins, Spaces Work/Home. Нативный tab strip скрыт userChrome. Ассистент — **Grok (официальный xAI) или Hermes** справа. Прокси — SOCKS5 с логином в движке Firefox (у Chrome этого нет).
 
 Это **не Firefox** в названии и не лиса на знаке.
 
@@ -18,7 +18,7 @@ Daily Firefox in Program Files is never patched. Policies/AutoConfig live only o
 
 Grok sidecar: SubStudio gateway at `127.0.0.1:1234` if it is up; else official `auth.x.ai` device-code or a console.x.ai API key. Mozilla’s built-in chatbot panel is pointed at **grok.com** (website + `?q=`). The *agent* is our sidecar.
 
-Version scheme: `0.1.0` … `0.1.9` → `0.2.0` (patch is a single digit). Tag `v0.1.2`.
+Version scheme: `0.1.0` … `0.1.9` → `0.2.0` (patch is a single digit). Tag `v0.1.3`.
 
 Auto-update: **Windows launcher** reads public GitHub Releases. Extension `update_url` is secondary and only persists on Firefox Release if the XPI is AMO-signed.
 
@@ -26,8 +26,8 @@ Auto-update: **Windows launcher** reads public GitHub Releases. Extension `updat
 
 ## Установка (Windows)
 
-1. Скачайте **`SubStudioBrowser-Setup-0.1.2.exe`** из [Releases](https://github.com/shastitko1970-netizen/substudio-browser/releases/tag/v0.1.2).
-2. Откройте установщик — обычное окно Windows (свернуть / закрыть). Welcome / runtime / progress / done. Не NSIS, не консоль.
+1. Скачайте **`SubStudioBrowser-Setup-0.1.3.exe`** из [Releases](https://github.com/shastitko1970-netizen/substudio-browser/releases/tag/v0.1.3).
+2. Откройте установщик — своё HTML-окно (свернуть / закрыть), без системного title bar. Welcome / runtime / progress / done. Не NSIS, не консоль.
 3. **Fetch Firefox ESR** (рекомендуем): официальный ESR в `%LOCALAPPDATA%\SubStudioBrowser`. Unsigned Grok sidecar держится. Setup.exe ESR не содержит — качает при установке.
 4. Или **Copy the Firefox I already have** — быстрее; на обычном Release сайдбар Grok может отвалиться.
 
@@ -41,11 +41,13 @@ Auto-update: **Windows launcher** reads public GitHub Releases. Extension `updat
 setup\Uninstall-SubStudioBrowser.ps1
 ```
 
-## Что внутри 0.1.2
+## Что внутри 0.1.3
+
+Frameless Setup.exe (HTML caption only), `setup-progress.jsonl` в `%TEMP%`, sidecar **Grok | Hermes**.
 
 | Кусок | Зачем |
 | --- | --- |
-| Setup.exe | Свой UI (WebView2 + HTML), светлая и тёмная бумага. Тот же `Install-SubStudioBrowser.ps1` |
+| Setup.exe | Frameless WebView2 + HTML caption. Тот же `Install-SubStudioBrowser.ps1` |
 | Space bar | Companion владеет левой колонкой: 3×3 pins, Work/Home, папки, + New Tab. Цвет Space настраивается. Палитра cream/coral/plum, не Arc navy. |
 | Частная копия Firefox | Политики не протекают в ежедневный профиль |
 | Grok справа | Складная панель (по умолчанию закрыта). Ctrl+\\ / Ctrl+Shift+G, кнопка у адреса и в футере Space bar. Левый rail сворачивается отдельно. |
@@ -68,6 +70,16 @@ setup\Uninstall-SubStudioBrowser.ps1
 
 Stock-панель Mozilla (`browser.ml.chat.provider` = `https://grok.com`) — это сайт. Агент API — sidecar.
 
+### Hermes: не встраиваем агента
+
+В sidecar переключатель **Grok | Hermes**. Hermes **не** стартует из браузера. Если на машине уже крутится агент — подключаемся:
+
+1. API server `http://127.0.0.1:8642` (полный агент + tools)
+2. Subscription proxy `http://127.0.0.1:8645` (только inference)
+3. Свой URL + `API_SERVER_KEY` в настройках
+
+SSH и удалённые шлюзы живут в Hermes Desktop → Gateways. Браузер говорит только с локальным HTTP.
+
 ## Обновления
 
 Схема версий: `0.MINOR.PATCH`, PATCH = 0…9, дальше MINOR+1.
@@ -88,7 +100,7 @@ python scripts/build_release.py
 python scripts/build_setup.py
 ```
 
-GitHub Actions на теге `v0.*` публикует `SubStudioBrowser-0.1.2.zip`, `SubStudioBrowser-Setup-0.1.2.exe`, `.xpi`, `updates.json`, `.sha256`.
+GitHub Actions на теге `v0.*` публикует `SubStudioBrowser-0.1.3.zip`, `SubStudioBrowser-Setup-0.1.3.exe`, `.xpi`, `updates.json`, `.sha256`.
 
 ## Товарные знаки и лицензии
 

@@ -5,6 +5,11 @@ bootTheme();
 const $ = (id) => document.getElementById(id);
 const send = (type, payload = {}) => browser.runtime.sendMessage({ type, ...payload });
 
+const ASSISTANT_KEY = "ssb_assistant";
+const HERMES_EMPTY =
+  "Hermes не запущен. Открой Hermes Desktop или `hermes gateway` / `hermes proxy`. SSH и удалённые машины настраиваются в Hermes, не здесь.";
+
+let assistant = "grok";
 let thread = { id: crypto.randomUUID(), messages: [], previousResponseId: null, title: "" };
 let tabs = [];
 
@@ -33,21 +38,64 @@ function addBubble(role, text, cites = []) {
   return wrap.querySelector(".bubble");
 }
 
+function applyAssistantChrome(probe) {
+  const hermes = assistant === "hermes";
+  $("pick-grok").classList.toggle("on", !hermes);
+  $("pick-hermes").classList.toggle("on", hermes);
+  $("brand").textContent = hermes ? "Hermes" : "Grok";
+  $("subline").textContent = hermes ? "local sidecar" : "Official xAI · this Space";
+  $("input").placeholder = hermes ? "Ask Hermes about this Space..." : "Ask Grok about this Space...";
+  if (!hermes) return;
+  const kind = probe?.kind || "none";
+  $("dot").className = `dot ${probe?.ok ? "on" : "off"}`;
+  $("source").textContent = { "api-server": "api-server", proxy: "proxy", custom: "custom", none: "offline" }[kind] || kind;
+  const emptyNode = $("messages").querySelector(".empty");
+  if (probe?.ok) {
+    if (emptyNode) emptyNode.remove();
+    return;
+  }
+  $("hint").textContent = HERMES_EMPTY;
+  if (!$("messages").children.length) {
+    const empty = document.createElement("div");
+    empty.className = "empty";
+    empty.textContent = HERMES_EMPTY;
+    $("messages").append(empty);
+  }
+}
+
+async function setAssistant(next) {
+  assistant = next === "hermes" ? "hermes" : "grok";
+  await browser.storage.local.set({ [ASSISTANT_KEY]: assistant, assistant });
+  thread = { id: crypto.randomUUID(), messages: [], previousResponseId: null, title: "" };
+  $("messages").replaceChildren();
+  await refreshSession();
+}
+
 async function refreshSession() {
   const state = await send("getState");
+  assistant = state.settings?.assistant === "hermes" ? "hermes" : "grok";
   const session = state.session || {};
-  $("dot").className = `dot ${session.source && session.source !== "none" ? "on" : "off"}`;
-  const label = {
-    substudio: "SubStudio",
-    xai: "xAI",
-    apikey: "API",
-    none: "нет сессии",
-  }[session.source] || session.source;
-  $("source").textContent = label;
-  if (session.source === "none") {
-    $("hint").textContent = "Запусти SubStudio или войди в Grok в настройках.";
+  if (assistant === "hermes") {
+    const probe = await send("probeHermes");
+    applyAssistantChrome(probe);
+    if (probe?.ok) {
+      $("hint").textContent = probe.origin || "";
+    }
   } else {
-    $("hint").textContent = session.user?.name || "";
+    applyAssistantChrome(null);
+    $("dot").className = `dot ${session.source && session.source !== "none" ? "on" : "off"}`;
+    const label = {
+      substudio: "SubStudio",
+      xai: "xAI",
+      apikey: "API",
+      none: "нет сессии",
+    }[session.source] || session.source;
+    $("source").textContent = label;
+    if (session.source === "none") {
+      $("hint").textContent = "Запусти SubStudio или войди в Grok в настройках.";
+    } else {
+      $("hint").textContent = session.user?.name || "";
+    }
   }
   const pending = state.pending || [];
   const box = $("permits");
@@ -55,7 +103,7 @@ async function refreshSession() {
   for (const item of pending) {
     const row = document.createElement("div");
     row.className = "permit";
-    row.innerHTML = `<span>Grok хочет: ${item.kind}</span>`;
+    row.innerHTML = `<span>${assistant === "hermes" ? "Hermes" : "Grok"} хочет: ${item.kind}</span>`;
     const allow = document.createElement("button");
     allow.className = "primary";
     allow.textContent = "Разрешить";
@@ -98,10 +146,17 @@ async function ask(text) {
   const bubble = addBubble("assistant", "…");
   const result = await send("chat", {
     messages: thread.messages,
-    previousResponseId: thread.previousResponseId,
+    previousResponseId: assistant === "hermes" ? null : thread.previousResponseId,
+    assistant,
   });
   if (result.error) {
-    bubble.textContent = result.error === "no-session" ? "Нет сессии Grok. Открой настройки." : result.error;
+    if (result.error === "no-session") {
+      bubble.textContent = "Нет сессии Grok. Открой настройки.";
+    } else if (result.error === "hermes-offline") {
+      bubble.textContent = HERMES_EMPTY;
+    } else {
+      bubble.textContent = result.error;
+    }
     return;
   }
   bubble.innerHTML = renderMarkdown(result.text || "");
@@ -114,7 +169,7 @@ async function ask(text) {
       bubble.parentElement.append(a);
     }
   }
-  if (result.responseId) {
+  if (result.responseId && assistant !== "hermes") {
     thread.previousResponseId = result.responseId;
   }
   if (result.text) {
@@ -144,6 +199,8 @@ $("new").onclick = () => {
   $("messages").replaceChildren();
 };
 $("settings").onclick = () => browser.runtime.openOptionsPage();
+$("pick-grok").onclick = () => setAssistant("grok");
+$("pick-hermes").onclick = () => setAssistant("hermes");
 $("summarize").onclick = async () => {
   await loadTabs();
   const active = tabs.find((item) => item.active);
@@ -167,6 +224,10 @@ window.addEventListener("message", (event) => {
 
 $("close-grok").onclick = () => send("toggleGrok");
 
-refreshSession();
-loadTabs();
+(async () => {
+  const stored = await browser.storage.local.get({ [ASSISTANT_KEY]: "grok" });
+  assistant = stored[ASSISTANT_KEY] === "hermes" ? "hermes" : "grok";
+  await refreshSession();
+  await loadTabs();
+})();
 setInterval(refreshSession, 8000);

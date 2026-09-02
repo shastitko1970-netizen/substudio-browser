@@ -18,6 +18,7 @@ var (
 	procReleaseCapture    = modUser32.NewProc("ReleaseCapture")
 	procSendMessageW      = modUser32.NewProc("SendMessageW")
 	procShowWindow        = modUser32.NewProc("ShowWindow")
+	procDestroyWindow     = modUser32.NewProc("DestroyWindow")
 	procDwmSetAttr        = modDwm.NewProc("DwmSetWindowAttribute")
 )
 
@@ -38,27 +39,26 @@ const (
 	wmNCLButtonDown             = 0x00A1
 	htCaption                   = 2
 	dwmwaWindowCornerPreference = 33
-	dwmwcpDefault               = 0
+	dwmwcpRound                 = 2
 )
 
 func nIndex(v int32) uintptr {
 	return uintptr(v)
 }
 
-// applyDesktopChrome keeps a real Windows caption so minimize, close, and Alt+F4 work.
-func applyDesktopChrome(hwnd windows.HWND) {
+func makeFrameless(hwnd windows.HWND) {
 	styleIdx := int32(gwlStyle)
 	exIdx := int32(gwlExStyle)
 	style, _, _ := procGetWindowLongPtrW.Call(uintptr(hwnd), nIndex(styleIdx))
-	style |= wsCaption | wsSysMenu | wsMinimizeBox | wsVisible
-	style &^= wsPopup | wsThickFrame | wsMaximizeBox
+	style &^= wsCaption | wsThickFrame | wsMinimizeBox | wsMaximizeBox | wsSysMenu
+	style |= wsPopup | wsVisible
 	_, _, _ = procSetWindowLongPtrW.Call(uintptr(hwnd), nIndex(styleIdx), style)
 
 	ex, _, _ := procGetWindowLongPtrW.Call(uintptr(hwnd), nIndex(exIdx))
 	ex |= wsExAppWindow
 	_, _, _ = procSetWindowLongPtrW.Call(uintptr(hwnd), nIndex(exIdx), ex)
 
-	pref := int32(dwmwcpDefault)
+	pref := int32(dwmwcpRound)
 	_, _, _ = procDwmSetAttr.Call(
 		uintptr(hwnd),
 		uintptr(dwmwaWindowCornerPreference),
@@ -72,6 +72,13 @@ func applyDesktopChrome(hwnd windows.HWND) {
 		0, 0, 0, 0,
 		swpNoMove|swpNoZOrder|swpFrameChanged,
 	)
+}
+
+func destroyWindow(hwnd windows.HWND) {
+	if hwnd == 0 {
+		return
+	}
+	_, _, _ = procDestroyWindow.Call(uintptr(hwnd))
 }
 
 func dragWindow(hwnd windows.HWND) {

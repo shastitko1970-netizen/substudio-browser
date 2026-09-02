@@ -9,6 +9,7 @@ import {
   signOut,
   probeSubStudio,
 } from "./lib/grok.js";
+import { complete as hermesComplete, probeHermes } from "./lib/hermes.js";
 import { listThreads, saveThread, listNotes, saveNote, clearVault, exportVault } from "./lib/memory.js";
 import { listTabs, runTool, resolvePending, getPending, tabSummary } from "./lib/tabs.js";
 import { checkUpdate } from "./lib/update.js";
@@ -87,15 +88,19 @@ const messageHandlers = {
 
   async saveSettings(message) {
     settings = await loadSettings();
-    const next = {
-      substudioHost: String(message.substudioHost || "127.0.0.1").trim(),
-      substudioPort: Number(message.substudioPort) || 1234,
-      proxyEnabled: Boolean(message.proxyEnabled),
-      grokModel: message.grokModel || settings.grokModel,
-      uiTheme: message.uiTheme || settings.uiTheme || "system",
-    };
-    settings = { ...settings, ...next, proxies: settings.proxies };
-    await browser.storage.local.set(next);
+    const next = { ...settings };
+    if (message.substudioHost != null) next.substudioHost = String(message.substudioHost || "127.0.0.1").trim();
+    if (message.substudioPort != null) next.substudioPort = Number(message.substudioPort) || 1234;
+    if (message.proxyEnabled != null) next.proxyEnabled = Boolean(message.proxyEnabled);
+    if (message.grokModel) next.grokModel = message.grokModel;
+    if (message.uiTheme) next.uiTheme = message.uiTheme;
+    if (message.hermesBaseUrl != null) next.hermesBaseUrl = String(message.hermesBaseUrl).trim();
+    if (message.hermesApiKey != null) next.hermesApiKey = String(message.hermesApiKey);
+    if (message.hermesPortApi != null) next.hermesPortApi = Number(message.hermesPortApi) || 8642;
+    if (message.hermesPortProxy != null) next.hermesPortProxy = Number(message.hermesPortProxy) || 8645;
+    if (message.assistant === "hermes" || message.assistant === "grok") next.assistant = message.assistant;
+    settings = { ...next, proxies: settings.proxies };
+    await browser.storage.local.set({ ...next, ssb_assistant: next.assistant });
     syncProxyListener(settings);
     return { settings };
   },
@@ -172,6 +177,11 @@ const messageHandlers = {
     return probeSubStudio(`http://${settings.substudioHost}:${settings.substudioPort}`);
   },
 
+  async probeHermes() {
+    settings = await loadSettings();
+    return probeHermes(settings);
+  },
+
   async session() {
     return sessionStatus(settings);
   },
@@ -198,22 +208,39 @@ const messageHandlers = {
   },
 
   async chat(message) {
+    settings = await loadSettings();
     const uid = await userId();
     const notes = await listNotes(uid);
     const memoryBlock = notes.length
       ? `\n\nUser memory (local, tied to Grok account):\n${notes.map((item) => `- ${item.text}`).join("\n")}`
       : "";
-    const system = {
-      role: "system",
-      content:
-        "You are Grok inside SubStudio Browser. Official xAI API only. See tabs via tools. Never request cookies or raw authenticated HTML. Destructive tab actions require a UI confirmation chip. Answer in the user's language (usually Russian)." +
-        memoryBlock,
-    };
-    const result = await complete({
-      settings,
-      messages: [system, ...(message.messages || [])],
-      previousResponseId: message.previousResponseId,
-    });
+    const useHermes = (message.assistant || settings.assistant) === "hermes";
+    const system = useHermes
+      ? {
+          role: "system",
+          content:
+            "You are Hermes connected from SubStudio Browser. Tab tools still go through the SubStudio companion and need the same confirmation chips. Never request cookies or raw authenticated HTML. Answer in the user's language (usually Russian)." +
+            memoryBlock,
+        }
+      : {
+          role: "system",
+          content:
+            "You are Grok inside SubStudio Browser. Official xAI API only. See tabs via tools. Never request cookies or raw authenticated HTML. Destructive tab actions require a UI confirmation chip. Answer in the user's language (usually Russian)." +
+            memoryBlock,
+        };
+    let result;
+    if (useHermes) {
+      result = await hermesComplete({
+        settings,
+        messages: [system, ...(message.messages || [])],
+      });
+    } else {
+      result = await complete({
+        settings,
+        messages: [system, ...(message.messages || [])],
+        previousResponseId: message.previousResponseId,
+      });
+    }
     if (result.toolCalls?.length) {
       const confirmations = [];
       const toolResults = [];
